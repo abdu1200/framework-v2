@@ -1,0 +1,161 @@
+---
+title: "Design Problem 4"
+description: "Managing Multiple Algorithm Variations Without Conditional Complexity..."
+descriptioning: "In many software systems, there arises a need to perform a particular operation in multiple different ways, depending on context, user preference, or runtime conditions. A common but problematic approach is to handle these variations using conditional statements, such as long chains of if-else or switch blocks, all embedded within a single class. This design tightly couples the core business logic to multiple **algorithm implementations**, resulting in code that is hard to maintain, difficult to extend, and prone to errors. As new algorithms are added, the class becomes cluttered with branching logic, which violates fundamental software design principles like the Single Responsibility Principle and the Open/Closed Principle...."
+category: "Behavioral"
+difficulty: "Medium"
+---
+
+# Problem: <text>Managing Multiple Algorithm Variations Without Conditional Complexity</text>
+  
+## <div>General Design Problem Description</div>
+
+In many software systems, there arises a need to perform a particular operation in multiple different ways, depending on **context, user preference, or runtime conditions**. A common but problematic approach is to handle these variations using conditional statements, such as long chains of **if-else** or switch blocks, all embedded within a single class. This design tightly couples the core business logic to multiple **algorithm implementations**, resulting in code that is hard to maintain, difficult to extend, and prone to errors. As new algorithms are added, the class becomes cluttered with branching logic, which violates fundamental software design principles like the **Single Responsibility Principle** and the **Open/Closed Principle**.
+
+This problem is especially pronounced in applications that rely on interchangeable processing techniques, such as **encryption algorithms, sorting mechanisms, or media compression methods**. Without proper abstraction, every new algorithm necessitates **modifying existing code**, which introduces risks of regression, unintended side effects, and system instability. Developers often find themselves repeatedly adjusting core classes simply to support new algorithmic variations, making the system **fragile** and **hard to scale** as requirements grow.
+
+Over time, this approach leads to **rigid** and **brittle** systems. The main class becomes overloaded with responsibilities that do not belong to it, combining both its primary functionality and all algorithm logic into a single **bloated component**. This makes testing difficult, as algorithm variations cannot be isolated, and debugging becomes cumbersome. The overall **codebase** loses clarity, creating challenges for **maintainability** and future enhancements.
+
+To address these issues, a more **modular design** is necessary- one that separates **algorithm implementation** from the core context logic. By encapsulating each algorithm within its own independent module, developers can introduce new behaviors without altering existing code, reduce the potential for bugs, and maintain **system integrity**. This approach supports **polymorphism**, enables dynamic **algorithm selection**, and establishes a clean, scalable architecture that can grow flexibly as new requirements arise.
+
+## <div>Design Problem Real-world Example</div>
+
+When developing applications that need to process data using **multiple algorithms**, a common mistake is implementing all algorithm variations directly within the main class. For example, in an **image storage system**, the <span>ImageStorage</span> class might be responsible for compressing images with different **compression algorithms** such as JPEG or PNG, as well as applying various **image filters** before saving them. Typically, the algorithm types are stored as private fields, like <span>compressionType</span> and <span>filterType</span>, and **decision-making statements** such as if-else or switch blocks are used to determine which algorithm to execute for each operation.
+
+This approach forces the **main class** to constantly check the current algorithm type and run the appropriate logic. While manageable for a small number of algorithms, the system quickly becomes cumbersome as more algorithms and filters are added. For instance, the ImageStorage class might need to work with <span>JpegCompressor</span>, <span>PngCompressor</span>, <span>HighContrastFilter</span>, <span>BlackAndWhiteFilter</span>. Each new algorithm or filter increases the length and complexity of conditional chains, making the main class overloaded with responsibilities beyond its core functionality of storing images. The class essentially becomes a combination of storage logic and algorithm execution logic, which is hard to read, maintain, and debug.
+
+As the application continues to grow, modifying or extending algorithms directly within the main class introduces significant risks. Every change may unintentionally affect other parts of the code, potentially causing **bugs or regressions**. Developers are forced to repeatedly alter the same class, violating the **Single Responsibility Principle** because the class now manages both data storage and algorithm logic. The approach also breaches the **Open/Closed Principle**, since adding a new compression method or filter requires modifying existing code rather than extending it safely.
+
+Furthermore, this tightly coupled design makes testing and reusability difficult. Individual algorithms cannot be tested in isolation without instantiating the main class and running through all conditional logic. The system becomes **rigid, fragile, and resistant to change**, with limited scalability. Future enhancements, such as supporting new compression formats or filter types, demand changes throughout the core class. A cleaner solution would separate algorithm implementations into independent, interchangeable units, allowing the main class to focus solely on orchestrating workflows and enabling a **modular, maintainable, and flexible** architecture.
+
+
+## <div>Design Problem Code Example in Java</div> 
+
+```java 
+// ImageStorage.java
+public class ImageStorage {
+    private String compressor;
+    private String filter;
+
+    public ImageStorage(String compressor, String filter) {
+        this.compressor = compressor;
+        this.filter = filter;
+    }
+
+    public void store(String fileName) {
+        // Handle compression
+        if(compressor == "PNG") {
+            System.out.println("compressing with PNG");
+        } else if (compressor == "JPEG") {
+            System.out.println("compressing with JPEG");
+        } else if (compressor.equals("GIF")) {
+            System.out.println("Compressing " + fileName + " with GIF");
+        }
+
+         // Handle filtering
+        if(filter == "B&W") {
+            System.out.println("filtering with B&N");
+        } else if (filter == "high contrast") {
+            System.out.println("filtering with high contrast");
+        } else if (filter.equals("Sepia")) {
+            System.out.println("Applying Sepia filter to " + fileName);
+        }
+    }
+
+}
+
+// Main.java
+public class Main {
+    public static void main(String[] args) {
+        ImageStorage image1 = new ImageStorage("PNG", "High Contrast");
+        image1.store("image1.png");
+
+        ImageStorage image2 = new ImageStorage("JPEG", "B&W");
+        image2.store("image2.jpeg");
+
+        ImageStorage image3 = new ImageStorage("GIF", "Sepia");
+        image3.store("image3.gif");
+    }
+}
+
+```
+
+## <div>Design Problem Code Example in C#</div>
+
+```csharp
+
+// ImageStorage.c#
+public class ImageStorage
+{
+    private string _compressor;
+    private string _filter;
+
+    public ImageStorage(string compressor, string filter)
+    {
+        _compressor = compressor;
+        _filter = filter;
+    }
+
+    public void Store(string fileName)
+    {
+
+        // Handle compression
+        if (_compressor == "PNG")
+        {
+            System.Console.WriteLine("compressing with PNG");
+        }
+        else if (_compressor == "JPEG")
+        {
+            System.Console.WriteLine("compressing with JPEG");
+        }
+        else if (_compressor == "GIF")
+        {
+            System.Console.WriteLine($"Compressing {fileName} with GIF");
+        }
+
+        // Handle filtering
+        if (_filter == "B&W")
+        {
+            System.Console.WriteLine("filtering with B&N");
+        }
+        else if (_filter == "high contrast")
+        {
+            System.Console.WriteLine("filtering with high contrast");
+        }
+        else if (_filter == "Sepia")
+        {
+            System.Console.WriteLine($"Applying Sepia filter to {fileName}");
+        }
+    }
+}
+
+public class Program
+{
+    public static void Main()
+    {
+        ImageStorage image1 = new ImageStorage("PNG", "High Contrast");
+        image1.Store("image1.png");
+
+        ImageStorage image2 = new ImageStorage("JPEG", "B&W");
+        image2.Store("image2.jpeg");
+
+        ImageStorage image3 = new ImageStorage("GIF", "Sepia");
+        image3.Store("image3.gif");
+    }
+}
+
+```
+
+## <div>Design Code design issues</div> 
+
+**Long conditional statements**: The current implementation relies heavily on **if-else** or **switch statements** to determine which algorithm to execute for compression or filtering. As more algorithms are introduced, these conditional blocks become longer and more complex, making the code harder to read and understand.
+
+**Bloated main class**: The **ImageStorage** class is responsible for managing multiple concerns, including compression and filtering. This results in a class overloaded with logic that does not directly pertain to its primary role of storing images, making it bulky and less cohesive.
+
+**Violates Single Responsibility Principle**: By combining storage functionality with multiple algorithm implementations, the **ImageStorage** class fails to adhere to the Single Responsibility Principle. Each responsibility, storage, compression, and filtering, should ideally be encapsulated in its own class to make the system more modular and maintainable.
+
+**Hard to extend**: Adding new compression or filter algorithms requires modifying the ImageStorage class directly, which violates the **Open/Closed Principle**. Instead of being open for extension and closed for modification, the system forces developers to edit existing code for every new variation.
+
+**Bulky class with details**: The **ImageStorage** class accumulates all algorithm logic inside itself, making it large and difficult to navigate. This reduces clarity and makes it harder for new developers to understand the class’s primary purpose.
+
+**Hard to test independently**: Because all algorithms are implemented inside the **ImageStorage** class, testing a single compression or filter method independently is cumbersome. Developers must instantiate the full context and possibly configure other unrelated settings, complicating unit testing and slowing development.

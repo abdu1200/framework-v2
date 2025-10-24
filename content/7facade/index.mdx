@@ -1,0 +1,184 @@
+---
+title: "Design Problem 7"
+description: "Managing Complex Subsystem Interactions Without Overwhelming Client Classes..."
+descriptioning: "In large software systems, client components often depend on multiple classes from complex subsystems to perform even simple tasks. Each subsystem may contain several interconnected classes responsible for handling specialized operations such as networking, authentication, data processing, or storage. When clients directly interact with these subsystems, they must understand the internal workings and call sequences of each component in the correct order. This leads to tightly coupled code, making the system brittle and difficult to modify or extend....."
+category: "Structural"
+difficulty: "Medium"
+---
+
+# Problem: <text>Managing Complex Subsystem Interactions Without Overwhelming Client Classes</text>
+  
+## <div>General Design Problem Description</div>
+
+In **large software systems**, client components often depend on multiple classes from complex subsystems to perform even simple tasks. Each subsystem may contain several interconnected classes responsible for handling specialized operations such as networking, authentication, data processing, or storage. When clients directly interact with these subsystems, they must understand the internal workings and call sequences of each component in the correct order. This leads to tightly coupled code, making the system brittle and difficult to modify or extend.
+
+As the system evolves, changes in any of these **subsystem classes** ripple across multiple client modules. For example, if a **method signature or initialization process** changes in one subsystem class, every client that interacts with it must also be updated. This dependency explosion increases the cost of maintenance and reduces overall flexibility. Moreover, it forces developers working on different parts of the system to repeatedly implement similar sequences of operations, resulting in duplicated code and inconsistent behaviors.
+
+This type of coupling also creates readability and testing challenges. Since clients are tightly tied to the details of subsystem interactions, understanding or testing a simple feature may require **setting up multiple interconnected objects**, connections, and configurations. The lack of abstraction makes the system more error-prone, particularly when multiple clients perform the same sequence of steps with slight variations or missing operations.
+
+Ultimately, this structure violates several design principles, most notably the **Single Responsibility** and **Dependency Inversion Principles**, by forcing high-level modules to depend directly on low-level details. A more modular solution is needed, one that hides subsystem complexity behind a single, unified interface. This would reduce coupling, improve maintainability, and allow clients to focus solely on their business responsibilities rather than low-level operational details.
+
+## <div>Design Problem Real-world Example</div>
+
+When building mobile applications that require **push notification** functionality, developers often interact directly with **multiple complex subsystems**. For example, to send a push notification, the application needs to work with a NotificationServer class that provides methods like <span>connect()</span> (returns Connection object), authenticate(appID, key) (returns <span>AuthToken object</span>), send(authToken, message, target), and <span>Connection.disconnect()</span>. 
+
+The problem arises when every part of the application that needs to send notifications must execute all these steps sequentially in the correct order. This creates tight coupling between the main application classes and multiple subsystem classes (Message, NotificationServer, AuthToken, Connection). As the application grows, multiple classes across different sections may need notification capabilities, meaning each becomes dependent on these four classes. When any of these subsystem classes change their interface or implementation, the changes ripple through multiple parts of the application, making maintenance difficult and increasing the risk of breaking existing functionality. 
+
+Even worse, this structure **violates the Open/Closed Principle**, since adding a new dependent type always requires **modifying existing code**. It also makes the system **inflexible at runtime**. If users want to create new charts or remove existing ones while the application is running, there’s no built-in mechanism for doing so dynamically. The <span>DataSource</span> becomes the central bottleneck of change - a single point that must be aware of every dependent, which destroys scalability and extensibility.
+
+Over time, this kind of rigid design leads to **maintenance headaches**. When a change is made to how the data source updates its dependents, developers must **inspect multiple code paths** and ensure that no updates are missed. Debugging becomes cumbersome, testing requires the full system to be active, and reusing components in other projects becomes nearly impossible because they depend on one another. The result is a **bloated, interlocked, and error-prone system**, where the inability to treat dependencies dynamically undermines the overall flexibility and maintainability of the software.
+
+
+## <div>Design Problem Code Example in Java</div> 
+
+```java 
+// AuthToken.java
+public class AuthToken {
+}
+
+// Connection.java
+public class Connection {
+    public void disconnect() {
+        System.out.println("disconnecting with the server");
+    }
+}
+
+// Message.java
+public class Message {
+    private String content;
+
+    public Message(String content) {
+        this.content = content;
+    }
+
+    public String getContent() {
+        return content;
+    }
+}
+
+// NotificationServer.java
+public class NotificationServer {
+
+    public Connection connect(String ipAddress) {
+        return new Connection();
+    }
+
+    public AuthToken authenticate(String appID, String key) {
+        return new AuthToken();
+    }
+
+    public void send(AuthToken authToken, Message message, String target) {
+        System.out.println("Sending notification/message:");
+        System.out.println(message.getContent());
+    }
+
+}
+
+
+// Demo
+public class Main {
+    public static void main(String[] args) {
+
+       var notificationServer = new NotificationServer();
+       var connection = notificationServer.connect("11.35.35.10");
+       var authToken = notificationServer.authenticate("jio3j2r0efjjj0", "********");
+       var message = new Message("Hello World");
+       notificationServer.send(authToken, message, "good users");
+       connection.disconnect();
+
+    }
+
+}
+
+```
+
+## <div>Design Problem Code Example in C#</div> 
+
+```csharp
+// AuthToken.cs
+public class AuthToken
+{
+}
+
+// Connection.cs
+public class Connection
+{
+    public void Disconnect()
+    {
+        Console.WriteLine("disconnecting with the server");
+    }
+}
+
+// Message.cs
+public class Message
+{
+    private string content;
+
+    public Message(string content)
+    {
+        this.content = content;
+    }
+
+    public string GetContent()
+    {
+        return content;
+    }
+}
+
+// NotificationServer.cs
+public class NotificationServer
+{
+    public Connection Connect(string ipAddress)
+    {
+        return new Connection();
+    }
+
+    public AuthToken Authenticate(string appID, string key)
+    {
+        return new AuthToken();
+    }
+
+    public void Send(AuthToken authToken, Message message, string target)
+    {
+        Console.WriteLine("Sending notification/message:");
+        Console.WriteLine(message.GetContent());
+    }
+}
+
+// Program.cs
+public class Program
+{
+    public static void Main(string[] args)
+    {
+        var notificationServer = new NotificationServer();
+        var connection = notificationServer.Connect("11.35.35.10");
+        var authToken = notificationServer.Authenticate("jio3j2r0efjjj0", "********");
+        var message = new Message("Hello World");
+        notificationServer.Send(authToken, message, "good users");
+        connection.Disconnect();
+    }
+}
+```
+
+## Code design issues: 
+
+**Tight Coupling**:
+In this flawed approach, the **DataSource directly references and manages its dependents**, such as <span>Chart</span> and <span>SpreadSheet</span>. This means the subject cannot exist independently, making it impossible to reuse or extend without rewriting the dependency management logic.
+
+**Limited Extensibility**:
+Adding new dependent objects requires **modifying the DataSource class** every single time. This not only introduces code repetition but also slows down the integration of new features, as every addition demands touching core classes.
+
+**Violation of the Open/Closed Principle**:
+Because the source must be **edited for every new observer**, the system violates one of the foundational rules of clean architecture. Instead of being extended through new code, it must be constantly rewritten - increasing risk and fragility.
+
+**Hard to Scale**:
+The system cannot accommodate **runtime changes** - for example, when a user creates or deletes a dependent component dynamically. The number and type of observers are fixed at compile time, severely restricting scalability.
+
+**Poor Maintainability**:
+As the **DataSource becomes overloaded** with dependency logic, it becomes harder to maintain, debug, or refactor. Even small changes risk breaking notification behavior, leading to inconsistent system states.
+
+**No Flexibility**:
+There is no **modular structure** allowing the developer to easily swap out or extend observers. Every observer is hardcoded, destroying flexibility and making testing or prototyping inefficient.
+
+**Single Point of Failure**:
+Finally, since **DataSource directly depends on every observer**, any change in an observer’s interface can **break the entire notification chain**, turning the DataSource into a fragile single point of failure for the entire system.

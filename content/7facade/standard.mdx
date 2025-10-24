@@ -1,0 +1,160 @@
+
+
+# Facade Pattern - <text>Implementation Guideline</text>
+ 
+## <div>Proper usage guideline</div>
+The Facade Pattern should be used when a system becomes too complex for client classes to interact with directly, especially when it involves multiple subsystems or APIs that require coordinated operations. The key principle in applying this pattern is to design a single, simplified interface that encapsulates all underlying interactions while keeping clients isolated from subsystem details. Instead of exposing low-level classes or operations to the client, the facade class should provide high-level methods that achieve the intended functionality internally through composition and delegation.
+
+When implementing the facade, it is important to avoid transferring subsystem logic into client classes. All object creation, initialization, and method sequencing should occur exclusively within the facade. This ensures that clients are unaware of how subsystems communicate or depend on one another. The facade becomes the single entry point, promoting loose coupling and making the system easier to evolve over time. For instance, if a subsystem changes its communication protocol or data handling mechanism, the change can be accommodated entirely within the facade class without impacting the client-side logic.
+
+Another best practice is to design the facade with meaningful and business-oriented method names that reflect the client’s goals rather than technical steps. For example, a send() method in a notification service communicates intent, while the internal process (connecting, authenticating, sending, and disconnecting) remains hidden. This abstraction not only simplifies the client code but also enhances readability and maintainability across teams, particularly in large-scale systems with multiple developers.
+
+Finally, facades should be designed as thin wrappers, meaning they should delegate tasks to subsystems rather than duplicate their logic. This separation keeps the facade lightweight and ensures subsystems remain independent and testable. By following this approach, the Facade Pattern achieves its purpose of simplifying subsystem interaction while preserving system modularity, clarity, and scalability.
+
+## <div>Implementation Template in Java</div>
+
+```java 
+
+// AuthToken.java
+public class AuthToken {
+}
+
+// Connection.java
+public class Connection {
+    public void disconnect() {
+        System.out.println("disconnecting with the server");
+    }
+}
+
+// Message.java
+public class Message {
+    private String content;
+
+    public Message(String content) {
+        this.content = content;
+    }
+
+    public String getContent() {
+        return content;
+    }
+}
+
+// NotificationServer.java
+public class NotificationServer {
+
+    public Connection connect(String ipAddress) {
+        return new Connection();
+    }
+
+    public AuthToken authenticate(String appID, String key) {
+        return new AuthToken();
+    }
+
+    public void send(AuthToken authToken, Message message, String target) {
+        System.out.println("Sending notification/message:");
+        System.out.println(message.getContent());
+    }
+
+}
+
+// NotificationService.java
+public class NotificationService {
+
+    public void send(String message, String target) {
+        var notificationServer = new NotificationServer();
+        var connection = notificationServer.connect("11.35.35.10");
+        var authToken = notificationServer.authenticate("jio3j2r0efjjj0", "********");
+        notificationServer.send(authToken, new Message(message), target);
+        connection.disconnect();
+    }
+}
+
+
+// Demo
+public class Main {
+    public static void main(String[] args) {
+       var notificationService = new NotificationService();
+       notificationService.send("hello world", "goood users");
+
+    }
+}
+
+```
+
+## <div>How the Implementation Applies to the Real World Example</div>
+
+In the provided code example, the **NotificationService** class acts as the facade that simplifies interactions with several subsystem classes, **NotificationServer**, **Connection**, **AuthToken**, and **Message**. In a real-world notification system, sending a message typically involves multiple technical steps: establishing a connection with a remote server, authenticating the application, creating the message payload, sending the message, and closing the connection. Without a facade, every client class that wants to send a notification would have to repeat these steps manually, making the code verbose and error-prone.
+
+The **NotificationService** encapsulates all this complexity by exposing a single method, **send(String message, String target)**. Inside this method, the class performs all necessary operations, connecting to the server, authenticating, constructing a message object, sending it, and finally disconnecting, in the correct order. The client simply calls one method, without needing to know or manage any subsystem details. This makes the client code cleaner, more readable, and focused purely on the business logic (sending a notification), rather than the technical workflow behind it.
+
+Additionally, the **facade improves maintainability** by centralizing the logic of notification management. If the authentication process changes, or if the notification server requires a different connection parameter, only the **NotificationService** class needs to be updated. All client classes that use it remain completely unaffected. This decoupling minimizes the impact of future changes and ensures that the system adheres to the Open/Closed Principle — open for extension but closed for modification.
+
+This design proves invaluable when dealing with complex systems like payment gateways, database management layers, or third-party API integrations. The NotificationService in this example could easily be extended to include logging, error handling, or retry mechanisms — all within the same facade — without altering the clients. It demonstrates how the Facade Pattern provides simplicity on the surface while maintaining flexibility and extensibility under the hood.
+
+## Code/Implementation Template in C#
+``` csharp
+
+// AuthToken.cs
+public class AuthToken {
+}
+
+// Connection.cs
+public class Connection {
+    public void Disconnect() {
+        System.Console.WriteLine("disconnecting with the server");
+    }
+}
+
+// Message.cs
+public class Message {
+    private string content;
+
+    public Message(string content) {
+        this.content = content;
+    }
+
+    public string GetContent() {
+        return content;
+    }
+}
+
+// NotificationServer.cs
+public class NotificationServer {
+
+    public Connection Connect(string ipAddress) {
+        return new Connection();
+    }
+
+    public AuthToken Authenticate(string appID, string key) {
+        return new AuthToken();
+    }
+
+    public void Send(AuthToken authToken, Message message, string target) {
+        System.Console.WriteLine("Sending notification/message:");
+        System.Console.WriteLine(message.GetContent());
+    }
+}
+
+// NotificationService.cs
+public class NotificationService {
+
+    public void Send(string message, string target) {
+        var notificationServer = new NotificationServer();
+        var connection = notificationServer.Connect("11.35.35.10");
+        var authToken = notificationServer.Authenticate("jio3j2r0efjjj0", "********");
+        notificationServer.Send(authToken, new Message(message), target);
+        connection.Disconnect();
+    }
+}
+
+// Demo
+public class MainClass {
+    public static void Main(string[] args) {
+        var notificationService = new NotificationService();
+        notificationService.Send("hello world", "goood users");
+    }
+}
+
+```
+--
+

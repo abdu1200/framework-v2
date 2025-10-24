@@ -1,0 +1,184 @@
+
+
+# Decorator Pattern - <text>Implementation Guideline</text>
+ 
+## <div>Proper usage guideline</div>
+The **Decorator Pattern** should be applied when extending an object’s functionality dynamically without modifying its original structure. Instead of relying on inheritance, developers should design components to share a common interface, allowing multiple decorators to wrap the same base object. This ensures that the system remains open for extension but closed for modification, a core object-oriented design principle. When implementing this pattern, always ensure that both the base class (<span>component</span>) and its decorators conform to the same interface, enabling seamless layering of features.
+
+A key implementation rule is that **each decorator class should handle only one well-defined responsibility**. For example, one decorator may handle encryption, another compression, and another logging. Each decorator should add behavior before or after delegating the task to the wrapped component. This separation allows developers to stack decorators in any combination, creating flexible feature compositions without rewriting or duplicating code.
+
+When designing decorators, it’s important to use <span>composition over inheritance</span>. Each decorator holds a reference to an instance of the same interface type rather than extending the base class directly. This allows decorators to be combined recursively, enabling infinite flexibility in feature arrangement. The composition-based approach also ensures that decorators can be added or removed dynamically at runtime, which would be impossible with static inheritance.
+
+Lastly, developers should follow a clear naming and structural convention to maintain readability. Each decorator should clearly indicate its purpose (e.g., <span>EncryptedCloudStream</span>, <span>CompressedCloudStream</span>) and remain independent of other decorators. Avoid coupling decorators tightly to each other, as doing so would reduce modularity. The beauty of the pattern lies in its ability to form reusable, interchangeable, and dynamically composable objects — ensuring a clean and maintainable codebase.
+
+## <div>Implementation Template in Java</div>
+
+```java 
+
+// Stream.java
+public interface Stream {
+    void write(String data);
+}
+
+// CloudStream.java
+public class CloudStream implements Stream{
+
+    @Override
+    public void write(String data) {
+        System.out.println("storing" + data);
+    }
+}
+
+// EncryptedCloudStream.java
+public class EncryptedCloudStream implements Stream{
+    private Stream stream;
+
+    public EncryptedCloudStream(Stream stream) {
+        this.stream = stream;
+    }
+
+
+    @Override
+    public void write(String data) {
+        var encryptedData = encrypt(data);  //here this is the additional behaviour(the encryption)
+        stream.write(encryptedData);   // here the EncryptedCloudStream is decorating the 'stream' object, and adding the additonal behaviour(the encryption) to it
+    }
+
+    // note that the 'stream' object could be the CloudStream object, the CompressedCloudStream object, ..
+    // EncryptedCloudStream is the decorator
+
+    private String encrypt(String data) {
+        return "*^^%(&)&^$%^#%$@";
+    }
+
+}
+
+// CompressedCloudStream.java
+public class CompressedCloudStream implements Stream{
+    private Stream stream;
+
+    public CompressedCloudStream(Stream stream) {
+        this.stream = stream;
+    }
+
+
+    @Override
+    public void write(String data) {
+        var compressedData = compress(data);  //here this is the additional behaviour(the compression)
+        stream.write(compressedData);   // here the CompressedCloudStream is decorating the 'stream' object, and adding the additonal behaviour(the encryption) to it
+    }
+
+    // note that the 'stream' object could be the CloudStream object, the EncryptedCloudStream object, ..
+    // CompressedCloudStream is the decorator
+
+    private String compress(String data) {
+        return data.substring(0, 5);
+    }
+}
+
+// Demo
+public class Main {
+    public static void main(String[] args) {
+
+       var cloudStream = new CloudStream();
+       var compressedCloudStream = new CompressedCloudStream(cloudStream);
+       var encryptedCloudStream = new EncryptedCloudStream(compressedCloudStream);
+       encryptedCloudStream.write("user_data"); 
+    
+    }
+}
+
+```
+
+## <div>How the Implementation Applies to the Real World Example</div>
+
+The given implementation illustrates how the **Decorator Pattern** solves the problem of class explosion in the cloud storage scenario by using composition instead of inheritance. The**Stream ** interface defines a consistent contract for all stream-related operations, ensuring that each class, whether a base class or a decorator, can be used interchangeably. The **CloudStream** class implements the core functionality by simply storing the provided data, representing the basic file upload to cloud storage.
+
+Next, the <span>CompressedCloudStream</span> and <span>EncryptedCloudStream</span> classes implement the same interface but wrap another**Stream** instance. Each decorator modifies the data before delegating it to the next component in the chain. For instance, **CompressedCloudStream** compresses the data to reduce its size before sending it to the next stream, while **EncryptedCloudStream** encrypts the data to ensure confidentiality. These decorators can be layered in any sequence — one can compress first and then encrypt, or vice versa — demonstrating dynamic and runtime feature composition.
+
+In the <span>Main</span> class, this flexibility is showcased through the instantiation and wrapping process. The <span>CloudStream</span> is first wrapped by a **CompressedCloudStream**, which is then wrapped by an **EncryptedCloudStream**. When <span>write("user_data")</span> is called, the data first passes through the encryption process, then the compression process, and finally gets stored by the **CloudStream**. This modular and sequential data transformation perfectly aligns with the real-world cloud storage pipeline, where different operations (security, optimization, logging, etc.) are performed in stages.
+
+The overall implementation thus replaces a rigid inheritance structure with a dynamic composition model. It allows for easy modification, such as adding a **LoggedCloudStream** or a **ValidatedCloudStream**, without changing existing code. The pattern’s flexibility means that developers can customize data processing pipelines based on specific customer or system needs without modifying or duplicating the original class logic — an essential characteristic in large-scale cloud or enterprise systems.
+
+## <div>Implementation Template in C#</div>
+``` csharp
+
+// IStream.cs
+public interface IStream
+{
+    void Write(string data);
+}
+
+// CloudStream.cs
+public class CloudStream : IStream
+{
+    public void Write(string data)
+    {
+        Console.WriteLine("storing" + data);
+    }
+}
+
+// EncryptedCloudStream.cs
+public class EncryptedCloudStream : IStream
+{
+    private IStream stream;
+
+    public EncryptedCloudStream(IStream stream)
+    {
+        this.stream = stream;
+    }
+
+    public void Write(string data)
+    {
+        var encryptedData = Encrypt(data);  // here this is the additional behaviour(the encryption)
+        stream.Write(encryptedData);   // here the EncryptedCloudStream is decorating the 'stream' object, and adding the additonal behaviour(the encryption) to it
+    }
+
+    // note that the 'stream' object could be the CloudStream object, the CompressedCloudStream object, ..
+    // EncryptedCloudStream is the decorator
+
+    private string Encrypt(string data)
+    {
+        return "*^^%(&)&^$%^#%$@";
+    }
+}
+
+// CompressedCloudStream.cs
+public class CompressedCloudStream : IStream
+{
+    private IStream stream;
+
+    public CompressedCloudStream(IStream stream)
+    {
+        this.stream = stream;
+    }
+
+    public void Write(string data)
+    {
+        var compressedData = Compress(data);  // here this is the additional behaviour(the compression)
+        stream.Write(compressedData);   // here the CompressedCloudStream is decorating the 'stream' object, and adding the additonal behaviour(the compression) to it
+    }
+
+    // note that the 'stream' object could be the CloudStream object, the EncryptedCloudStream object, ..
+    // CompressedCloudStream is the decorator
+
+    private string Compress(string data)
+    {
+        return data.Substring(0, 5);
+    }
+}
+
+// Program.cs
+public class Program
+{
+    public static void Main(string[] args)
+    {
+        var cloudStream = new CloudStream();
+        var compressedCloudStream = new CompressedCloudStream(cloudStream);
+        var encryptedCloudStream = new EncryptedCloudStream(compressedCloudStream);
+        encryptedCloudStream.Write("user_data");
+    }
+}
+```
+--
+

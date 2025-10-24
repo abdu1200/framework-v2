@@ -1,0 +1,156 @@
+---
+title: "Design Problem 8"
+description: "Managing Exponential Class Growth and Tight Coupling in Multi-Dimensional Hierarchies..."
+descriptioning: "In large software systems, client components often depend on multiple classes from complex subsystems to perform even simple tasks. Each subsystem may contain several interconnected classes responsible for handling specialized operations such as networking, authentication, data processing, or storage. When clients directly interact with these subsystems, they must understand the internal workings and call sequences of each component in the correct order. This leads to tightly coupled code, making the system brittle and difficult to modify or extend....."
+category: "Structural"
+difficulty: "Medium"
+---
+
+# Problem: <text>Managing Exponential Class Growth and Tight Coupling in Multi-Dimensional Hierarchies</text>
+  
+## <div>General Design Problem Description</div>
+
+In **object-oriented software systems**, it is often necessary to extend the functionality of existing classes. A common approach to achieve this is through subclassing or inheritance, where each new feature or variation is implemented by creating a subclass that extends an existing one. While inheritance works well for simple extensions, it quickly becomes problematic when multiple features need to coexist or combine in different ways. The number of possible class combinations grows exponentially as more features are introduced, making the design **rigid**, **hard to maintain**, and **difficult to scale**.
+
+Consider a situation where a class needs to support **multiple independent features**—such as **compression**, **encryption**, logging, or validation—on top of its base functionality. Using inheritance for each combination of these features quickly leads to an explosion of subclasses. For instance, with four independent features, the developer would need to create sixteen different subclasses to represent all possible combinations. This approach creates an inflexible hierarchy that is error-prone and nearly impossible to manage in larger systems.
+
+Furthermore, this inheritance-based structure violates key object-oriented design principles such as the **Open/Closed Principle** and the **Single Responsibility Principle**. Each subclass handles multiple concerns simultaneously, and extending or modifying a single feature requires changes in multiple places across the hierarchy. As a result, maintenance becomes cumbersome, and introducing new behaviors without breaking existing ones becomes difficult.
+
+Ultimately, developers face a situation where feature composition through inheritance leads to **tightly coupled, redundant,** and **rigid** code. There is a need for a more modular and flexible approach that allows for adding, removing, or reordering features at runtime without modifying the core class or generating new subclasses for every combination.
+
+## <div>Design Problem Real-world Example</div>
+
+When building **cloud hosting applications** that manage file storage and retrieval, developers often begin with a simple class such as **CloudStream** that implements basic operations like <span>write()</span> and <span>read()</span> to and from the cloud. Over time, new requirements emerge—for example, encrypting sensitive data like passwords or credit card information before uploading, compressing large files to save bandwidth, or logging operations for auditing purposes.
+
+A naive implementation might involve creating subclasses such as <span>EncryptedCloudStream</span>, <span>CompressedCloudStream</span>, and **LoggedCloudStream**, each extending the base **CloudStream **and overriding its methods. However, problems arise when multiple features need to be applied together. Developers are forced to create additional subclasses like **EncryptedAndCompressedCloudStream** or **LoggedAndEncryptedCloudStream** to handle combinations. This quickly spirals out of control as the number of features grows.
+
+With each added **feature**, the number of required **classes increases exponentially**. For example, if a new feature such as caching is introduced, developers would need to create an entirely new set of **combination subclasses** to accommodate all possible feature combinations. This approach quickly leads to a class explosion, where the number of classes becomes unmanageable. It also results in **unnecessary code duplication**, as similar logic is often repeated across different subclasses
+
+Moreover, the **feature logic** becomes scattered across multiple subclasses, which makes it extremely difficult to isolate or reuse specific functionalities. For instance, if the **encryption logic** needs to be updated, every subclass that implements encryption must be modified individually, increasing the risk of errors. This scattered approach tightly **couples features**, preventing **dynamic composition**. As a result, developers cannot easily enable or disable certain behaviors at runtime, which reduces the flexibility and adaptability of the system.
+
+## <div>Design Problem Code Example in Java</div> 
+
+```java 
+// CloudStream.java
+public class CloudStream {
+
+    public void write(String data) {
+        System.out.println("storing");
+        System.out.println(data);
+    }
+}
+
+// CompressedCloudStream.java
+public class CompressedCloudStream extends CloudStream {
+    @Override
+    public void write(String data) {
+        var compressedData = compress(data);
+        super.write(compressedData);
+    }
+
+    private String compress(String data) {
+        return data.substring(0, 5);
+    }
+}
+
+// EncryptedCloudStream.java
+public class EncryptedCloudStream extends CloudStream {
+    @Override
+    public void write(String data) {
+        var encryptedData = encrypt(data);
+        super.write(encryptedData);
+    }
+
+    private String encrypt(String data) {
+        return "*^^%(&)&^$%^#%$@";
+    }
+}
+
+// CompressAndEncryptedCloudStream.java
+public class CompressAndEncryptedCloudStream extends CloudStream {
+   @Override
+   public void write(String data) {
+       var compressAndEncryptedData = compressAndEncrypt(data);
+       super.write(compressAndEncryptedData);
+   }
+
+   private String compressAndEncrypt(String data) {
+       return ...
+   }
+}
+
+```
+
+## <div> Design Problem Code Example in C#</div> 
+
+```csharp
+// CloudStream.cs
+public class CloudStream
+{
+    public virtual void Write(string data)
+    {
+        Console.WriteLine("storing");
+        Console.WriteLine(data);
+    }
+}
+
+// CompressedCloudStream.cs
+public class CompressedCloudStream : CloudStream
+{
+    public override void Write(string data)
+    {
+        var compressedData = Compress(data);
+        base.Write(compressedData);
+    }
+
+    private string Compress(string data)
+    {
+        return data.Substring(0, 5);
+    }
+}
+
+// EncryptedCloudStream.cs
+public class EncryptedCloudStream : CloudStream
+{
+    public override void Write(string data)
+    {
+        var encryptedData = Encrypt(data);
+        base.Write(encryptedData);
+    }
+
+    private string Encrypt(string data)
+    {
+        return "*^^%(&)&^$%^#%$@";
+    }
+}
+
+// CompressAndEncryptedCloudStream.cs
+public class CompressAndEncryptedCloudStream : CloudStream
+{
+    public override void Write(string data)
+    {
+        var compressAndEncryptedData = CompressAndEncrypt(data);
+        base.Write(compressAndEncryptedData);
+    }
+
+    private string CompressAndEncrypt(string data)
+    {
+        return ...
+    }
+}
+
+```
+
+## <div>Design Code design issues</div>
+
+The **exponential growth of classes** for feature combinations quickly overwhelms the codebase. As more features are introduced, the number of subclasses needed to handle all possible combinations increases dramatically, making the system difficult to manage, navigate, and understand.
+
+A **rigid inheritance hierarchy** emerges that is hard to modify. Since each new feature combination requires creating additional subclasses, the inheritance tree becomes deep and complex, making any modification or extension risky and time-consuming.
+
+**Code duplication** becomes a significant issue across similar combination classes. Logic that handles features such as encryption, compression, or logging often appears in multiple subclasses, increasing maintenance effort.
+
+The design violates the **Open/Closed Principle**, because extending behavior for new feature combinations necessitates creating new subclasses rather than allowing dynamic extension. Each addition forces developers to alter the class hierarchy, rather than simply adding new functionality independently.
+
+**Poor maintainability** arises since feature-specific logic is scattered across multiple classes. Tracking down or updating a particular feature becomes tedious, and mistakes can easily occur if developers miss a subclass that implements the same behavior in a slightly different way.
+
+Finally, the design violates the **Single Responsibility Principle**, as combination classes often handle multiple concerns simultaneously

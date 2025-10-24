@@ -1,0 +1,203 @@
+
+
+# Bridge Pattern - <text>Implementation Guideline</text>
+ 
+## <div>Proper usage guideline</div>
+The Bridge Pattern should be used when a system needs to support multiple variations of abstractions and implementations that must evolve independently. It’s particularly useful when inheritance alone would result in a rigid or excessively large class hierarchy. In such cases, relying solely on subclassing to add features or support new platforms becomes impractical and error-prone. The pattern helps avoid the combinatorial explosion of classes by introducing a clear separation between abstraction (what the system does) and implementation (how it’s done).
+
+When implementing the pattern, start by identifying the abstraction hierarchy—this represents the high-level control logic or operations that clients interact with. Then, define the implementation hierarchy—these are the lower-level components or platform-specific details that actually perform the work. The abstraction should maintain a reference to an implementation object through composition, rather than inheritance. This allows you to bridge the two hierarchies dynamically, creating flexible and reusable code structures.
+
+A key principle to keep in mind during implementation is composition over inheritance. By delegating implementation-specific behavior to separate classes, developers can easily extend either hierarchy without impacting the other. For instance, adding a new remote feature no longer requires creating subclasses for every brand of TV—it simply means extending the abstraction hierarchy. Likewise, integrating a new brand or device type only involves implementing the device interface.
+
+Finally, it’s essential to use the Bridge Pattern when runtime flexibility is required. Since the abstraction and implementation are connected via composition, you can dynamically switch implementations at runtime without changing client code. This makes the pattern ideal for applications that must support different configurations, hardware, or platforms while maintaining consistent control logic.
+
+## <div>Implementation Template in Java</div> 
+
+```java  
+// Device.java
+public interface Device {
+    void turnOn();
+    void turnOff();
+    void setChannel(int number);
+}
+
+// LgTv.java 
+public class LgTv implements Device{
+
+    @Override
+    public void turnOn() {
+        System.out.println("lg: turnON");
+    }
+
+    @Override
+    public void turnOff() {
+        System.out.println("lg: turnOFF");
+    }
+
+    @Override
+    public void setChannel(int number) {
+        System.out.println("lg: setChannel");
+    }
+}
+
+// SonyTv.java
+public class SonyTv implements Device{
+
+    @Override
+    public void turnOn() {
+        System.out.println("sony: turnON");
+    }
+
+    @Override
+    public void turnOff() {
+        System.out.println("sony: turnOFF");
+    }
+
+    @Override
+    public void setChannel(int number) {
+        System.out.println("sony: setChannel");
+    }
+}
+
+// RemoteControl.java
+public class RemoteControl {
+    protected Device device;
+
+    public RemoteControl(Device device) {
+        this.device = device;
+    }
+
+    public void turnOn() {
+        device.turnOn();
+    }
+
+    public void turnOff() {
+        device.turnOff();
+    }
+
+}
+
+// AdvancedRemoteControl.java 
+public class AdvancedRemoteControl extends RemoteControl{
+
+    public AdvancedRemoteControl(Device device) {
+        super(device);
+    }
+
+    public void setChannel(int number) {
+        device.setChannel(number);
+    }
+}
+
+// Demo 
+public class Main {
+    public static void main(String[] args) {
+
+       var remoteControl = new RemoteControl(new SonyTv()); //here creating a basic remote control for SonyTv
+       remoteControl.turnOn();
+
+       var advancedRemoteControl = new AdvancedRemoteControl(new SonyTv()); //here creating an advanced remote control for SonyTv
+       advancedRemoteControl.setChannel(3);
+
+       var lgRemoteControl = new RemoteControl(new LgTv()); //here creating a basic remote control for LgTv
+       lgRemoteControl.turnOn();
+
+    }
+    
+}
+
+```
+
+## <div>How the Implementation Applies to the Real World Example</div>
+
+In the given implementation, the Bridge Pattern effectively decouples the **remote control abstraction** from the **TV brand implementation**. The **Device** interface defines the core operations that any TV should support: turning on, turning off, and setting a channel. Each concrete TV brand, such as **SonyTv** or **LgTv**, implements this interface to define its own brand-specific behavior. This allows the system to support different device brands without changing the high-level control structure.
+
+The **RemoteControl** class represents the abstraction in this design. Instead of implementing brand-specific behavior directly, it delegates work to the **Device** object it holds via composition. This design means that the **RemoteControl** doesn’t need to know whether it’s controlling a Sony or LG TV—it only cares that the device conforms to the Device interface. Thus, the abstraction layer remains stable and generic, while the underlying implementations can vary freely.
+
+The **AdvancedRemoteControl** class extends the abstraction hierarchy to add new functionality (e.g., setting channels). Notice that this extension doesn’t require any modification to the existing **Device** implementations. Both Sony and LG TVs can now automatically support advanced remote operations through the shared interface. This exemplifies the power of independent growth between abstraction and implementation—new remote control types can be added without altering the brand classes, and vice versa.
+
+In the real-world remote control application, this design allows the app to scale efficiently. When a new device brand (like Samsung or Panasonic) needs to be integrated, developers simply implement the Device interface for that brand. Likewise, adding a new remote type, perhaps a **MovieRemoteControl** or a **SmartRemoteControl**, only requires extending the abstraction hierarchy. The two dimensions evolve independently, eliminating class explosion while maintaining clarity, flexibility, and reusability across the system.
+
+## <div>Implementation Template in C#</div>
+``` csharp
+
+// IDevice.cs
+public interface IDevice {
+    void TurnOn();
+    void TurnOff();
+    void SetChannel(int number);
+}
+
+// LgTv.cs
+public class LgTv : IDevice {
+    public void TurnOn() {
+        System.Console.WriteLine("lg: turnON");
+    }
+
+    public void TurnOff() {
+        System.Console.WriteLine("lg: turnOFF");
+    }
+
+    public void SetChannel(int number) {
+        System.Console.WriteLine("lg: setChannel");
+    }
+}
+
+// SonyTv.cs
+public class SonyTv : IDevice {
+    public void TurnOn() {
+        System.Console.WriteLine("sony: turnON");
+    }
+
+    public void TurnOff() {
+        System.Console.WriteLine("sony: turnOFF");
+    }
+
+    public void SetChannel(int number) {
+        System.Console.WriteLine("sony: setChannel");
+    }
+}
+
+// RemoteControl.cs 
+public class RemoteControl {
+    protected IDevice device;
+
+    public RemoteControl(IDevice device) {
+        this.device = device;
+    }
+
+    public void TurnOn() {
+        device.TurnOn();
+    }
+
+    public void TurnOff() {
+        device.TurnOff();
+    }
+}
+
+// AdvancedRemoteControl.cs 
+public class AdvancedRemoteControl : RemoteControl {
+    public AdvancedRemoteControl(IDevice device) : base(device) {
+    }
+
+    public void SetChannel(int number) {
+        device.SetChannel(number);
+    }
+}
+
+// Program.cs 
+public class Program { 
+    public static void Main(string[] args) {
+        var remoteControl = new RemoteControl(new SonyTv()); //here creating a basic remote control for SonyTv
+        remoteControl.TurnOn();
+
+        var advancedRemoteControl = new AdvancedRemoteControl(new SonyTv()); //here creating an advanced remote control for SonyTv
+        advancedRemoteControl.SetChannel(3);
+
+        var lgRemoteControl = new RemoteControl(new LgTv()); //here creating a basic remote control for LgTv
+        lgRemoteControl.TurnOn();
+    }
+}
+
+```
+--

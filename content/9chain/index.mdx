@@ -1,0 +1,124 @@
+---
+title: "Design Problem 9"
+description: "Constructing Complex Objects Step by Step with Flexible Control..."
+descriptioning: "In complex software systems, a single operation or request often requires multiple, sequential processing steps before completion. These steps may involve actions such as validation, authentication, authorization, transformation, logging, or compression. A common design issue arises when all these operations are implemented directly within a single class or method, where each step is explicitly called in a fixed sequence. This approach tightly couples the core logic with specific processing behaviors, making the system inflexible and difficult to modify..."
+category: "Creational"
+difficulty: "Medium"
+---
+
+# Problem: *Constructing Complex Objects Step by Step with Flexible Control*
+  
+## <div>General Design Problem Description</div>
+
+In many software systems, certain classes must maintain a **single, consistent instance** that is accessible throughout the entire application lifecycle. These classes often include **configuration managers**, **database connection pools**, logging handlers, and caching utilities. When developers do not enforce a single instance, multiple objects can be created unintentionally. This leads to **inconsistent states**, duplicated resources, and unnecessary **memory usage**, which can degrade the performance and reliability of the system. Each part of the program might independently instantiate a shared resource rather than referencing a unified instance, creating potential conflicts and inefficient resource utilization. Over time, these issues compound, making the system harder to debug, test, and maintain.
+
+The problem becomes particularly severe when managing **global settings** or **shared data** that must remain synchronized across multiple components. For instance, if two separate modules each create their own configuration instance, updates made in one module will not be visible to the other. This leads to **unpredictable behavior**, inconsistent functionality, and bugs that are difficult to trace. Developers often spend significant time identifying which instance contains the correct state, increasing the cognitive load and slowing development progress. Without a centralized approach, even small changes in configuration can have unintended ripple effects throughout the application.
+
+From a **software architecture perspective**, allowing multiple instances for globally shared resources directly violates the **Single Source of Truth principle**, which states that every piece of information should have one authoritative source. Without this, the integrity of the application state is compromised, and modules become tightly coupled as developers attempt to manually enforce consistency. This tight coupling reduces **maintainability**, makes the system more fragile, and increases the risk of errors whenever the global configuration is accessed or updated.
+
+The need for a **unified, centralized, and controlled access point** is therefore critical. A design that ensures a **single instance** can provide consistent access to shared data, reduce memory overhead, prevent race conditions, and improve **overall system stability**. Implementing such a design allows developers to maintain a reliable global state, ensures predictable behavior across all modules, and facilitates easier debugging and testing. The **Singleton Pattern** is explicitly designed to address these challenges by guaranteeing that only one instance of a class exists, providing a single point of access, and safeguarding the integrity of globally shared resources.
+## <div>Design Problem Real-world Example</div>
+
+In real-world applications, developers often create a <span>ConfigManager</span> class to manage global settings using a **map** (such as a HashMap or dictionary) combined with getter and setter methods. However, without enforcing a single instance, multiple **ConfigManager objects** may be created in different parts of the application. Each object maintains its own copy of configuration data, which can lead to **inconsistent states** and unexpected behavior when different modules attempt to access or modify settings. This situation demonstrates the limitations of traditional object instantiation when shared global data is involved.
+
+For example, one instance of **ConfigManager** may store a '<span>theme</span>' setting with a specific value. If another module creates a separate instance and attempts to read or update the 'theme' value, it will access an **empty or different state**, because the configuration exists only in the first instance. This inconsistency results in **fragmented configuration**, making it difficult to ensure that all modules operate on the same information. Developers may attempt to patch this problem with additional synchronization code, but this adds complexity and increases the likelihood of introducing new errors.
+
+Such issues frequently arise in applications of all scales, from small utilities to enterprise-level systems, whenever **shared resources** like logging services, database connections, or caching mechanisms are involved. Without a single authoritative instance, coordinating access and modifications to these resources becomes challenging. Modules may inadvertently overwrite each other’s data, introduce race conditions, or cause unexpected side effects that are difficult to reproduce.
+
+Ultimately, this example highlights the importance of enforcing a centralized singleton instance for global configuration management. By ensuring that all parts of the **application reference the same object**, developers can maintain consistency, prevent memory waste, and achieve predictable behavior
+
+## <div>Design Problem Code Example in Java</div> 
+
+```java
+// ConfigManager.java
+public class ConfigManager {
+    private Map<String, Object> settings = new HashMap<>();
+    private static ConfigManager instance = new ConfigManager();  //here we are initializing the single instance of this class
+
+
+    private ConfigManager() {} // private constructor with empty body
+
+    public static ConfigManager getInstance() {
+        return instance; // here is where the single instance of this class is shared
+    }
+
+    public Object getSettings(String key) {
+        return settings.get(key);
+    }
+
+    public void setSettings(String key, Object value) {
+        settings.put(key, value);
+    }
+}
+
+// Demo
+public class Main {
+    public static void main(String[] args) {
+
+       ConfigManager configManager = ConfigManager.getInstance();
+       configManager.setSettings("android_version", "11");
+
+       ConfigManager other = ConfigManager.getInstance(); 
+       System.out.println( other.getSettings("android_version") );
+
+    }
+}    
+
+
+```
+
+## <div>Design Problem Code Example in C#</div>
+
+```csharp
+// ConfigManager.cs
+public class ConfigManager 
+{
+    private Dictionary<string, object> settings = new Dictionary<string, object>();
+    private static ConfigManager instance = new ConfigManager();  //here we are initializing the single instance of this class
+
+    private ConfigManager() { } // private constructor with empty body
+
+    public static ConfigManager GetInstance() 
+    {
+        return instance; // here is where the single instance of this class is shared
+    }
+
+    public object GetSettings(string key) 
+    {
+        return settings[key];
+    }
+
+    public void SetSettings(string key, object value) 
+    {
+        settings[key] = value;
+    }
+}
+
+// Program.cs
+public class Program 
+{
+    public static void Main(string[] args) 
+    {
+        ConfigManager configManager = ConfigManager.GetInstance();
+        configManager.SetSettings("android_version", "11");
+
+        ConfigManager other = ConfigManager.GetInstance();
+        Console.WriteLine(other.GetSettings("android_version"));
+    }
+}
+
+```
+
+## <div>Design Code Quality Issues</div>
+
+Multiple instances of configuration classes can result in **inconsistent configuration state**, as each object maintains its own separate data, leading to conflicts when accessed from different parts of the application.
+
+Settings stored in one instance may not be **accessible from other instances**, causing data to become scattered and unreliable, which increases the risk of errors and unpredictable behavior.
+
+**Violates the ingle Source of Truth principle**, this design flaw undermines the integrity of the global application state and forces developers to manually enforce consistency between instances.
+
+Creating multiple instances unnecessarily consumes **memory resources**, adds complexity to maintaining consistent configuration across modules, and makes it difficult to control access and updates safely.
+
+Simultaneous modifications by different instances may lead to **race conditions**, where updates conflict or overwrite one another, introducing bugs that are challenging to reproduce and debug.
+
+

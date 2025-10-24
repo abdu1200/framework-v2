@@ -1,0 +1,172 @@
+
+
+# Strategy Pattern - <text>Implementation Guideline</text>
+ 
+## <div>Proper usage guideline</div>
+The **Strategy Pattern** should be applied when a class needs to perform a specific operation that can have **multiple algorithmic approaches**, each of which may **change or evolve independently over time**. Rather than embedding all possible behaviors directly in a single class, developers should define a common interface and encapsulate each algorithm as a **separate strategy class**. This allows the context class to maintain references to these strategies and **delegate execution dynamically**, enabling runtime flexibility and removing the need for complex conditional statements.
+
+This pattern is particularly useful in situations where the **choice of algorithm depends on context, user input, or runtime conditions**. For example, in a **payment processing system**, different payment methods (credit card, PayPal, crypto) can be implemented as separate strategies. The **context class**, such as PaymentProcessor, simply delegates to the selected strategy without needing to know the details of each payment method. This ensures the system remains **adaptable and open to new algorithms** without modifying the core logic.
+
+Implementing the Strategy Pattern **simplifies the core workflow** and promotes cleaner design through **separation of concerns**. Each strategy class focuses exclusively on implementing its specific algorithm, while the context class handles **orchestration and delegation**. This makes **testing easier**, as each strategy can be tested independently of the context, and allows developers to introduce new strategies **without risking regressions** in existing functionality.
+
+In practice, the Strategy Pattern is ideal for systems that require **interchangeable logic** or **dynamic behavior selection**, such as sorting mechanisms, compression algorithms, image processing pipelines, or machine-learning model selection. By encapsulating each behavior as a separate class, the system achieves modularity, maintainability, and scalability, enabling developers to **extend functionality by simply adding new strategy classes** rather than modifying existing code.
+
+
+## <div>Implementation Template in Java</div> 
+
+```java 
+
+// Filter.java
+public interface Filter {
+    void apply(String fileName);
+}
+
+// HighContrastFilter.java
+public class HighContrastFilter implements Filter{
+    @Override
+    public void apply(String fileName) {
+        System.out.println("filtering with High Contrast");
+    }
+}
+
+// BlackAndWhiteFilter.java
+public class BlackAndWhiteFilter implements Filter{
+    @Override
+    public void apply(String fileName) {
+        System.out.println("filtering with B&W");
+    }
+}
+
+// Compressor.java
+public interface Compressor {
+    void compress(String fileName);
+}
+
+// JpegCompressor.java
+public class JpegCompressor implements Compressor {
+    @Override
+    public void compress(String fileName) {
+        System.out.println("compressing with JPEG");
+    }
+}
+
+// PngCompressor.java
+public class PngCompressor implements Compressor{
+    @Override
+    public void compress(String fileName) {
+        System.out.println("compressing with PNG");
+    }
+}
+
+// ImageStorage.java
+public class ImageStorage {
+    private Compressor compressor;
+    private Filter filter;
+
+    public ImageStorage(Compressor compressor, Filter filter) {
+        this.compressor = compressor;
+        this.filter = filter;
+    }
+
+    public void store(String fileName) {
+        compressor.compress(fileName);
+        filter.apply(fileName);
+    }
+
+}
+
+// Demo
+public class Main {
+    public static void main(String[] args) {
+       var imageStorage = new ImageStorage(
+            new PngCompressor(),
+            new HighContrastFilter()
+        );
+
+       imageStorage.store("image1");
+
+    }
+}
+
+```
+
+## <div>How the Implementation Applied to the Real World Example</div>
+
+In the image storage application, the Strategy Pattern is applied to separate the algorithmic responsibilities for compression and filtering from the main <span>ImageStorage</span> class. Instead of handling multiple conditional statements to determine which compression or filter logic to use, the application defines clear contracts—<span>Compressor</span> and <span>Filter</span> interfaces—that each represent a family of interchangeable algorithms. The <span>ImageStorage</span> class depends on these abstractions rather than concrete implementations, ensuring a clean, decoupled design.
+
+When the system runs, concrete strategy objects like <span>PngCompressor</span> or <span>JpegCompressor</span> take care of compression, while filters such as <span>HighContrastFilter</span> or <span>BlackAndWhiteFilter</span> handle image processing. The <span>ImageStorage</span> class simply delegates tasks to these strategies through composition. This means developers can freely combine any compression and filter strategies at runtime—without modifying the existing class or introducing new conditional logic.
+
+For example, if an image needs to be compressed in PNG format with a high-contrast filter, the developer only needs to instantiate **ImageStorage** with a **PngCompressor** and a **HighContrastFilter**. To switch behaviors, they can pass a different set of strategies, like a **JpegCompressor** with a **BlackAndWhiteFilter**, and the application will behave accordingly—demonstrating runtime flexibility and high adaptability.
+
+This approach keeps the system maintainable, testable, and open to extension. When new algorithms such as a <span>WebPCompressor</span> or <span>VintageFilter</span> are introduced, they can be added as new strategy classes without modifying **ImageStorage** or breaking existing functionality. The result is a scalable and clean architecture that follows the principles of **encapsulation**, **polymorphism**, and **open/closed design**, allowing the application to evolve effortlessly as new requirements arise.
+
+## <div> Implementation Template in C# </div>
+``` csharp
+
+// IFilter.cs
+public interface IFilter {
+    void Apply(string fileName);
+}
+
+// HighContrastFilter.cs
+public class HighContrastFilter : IFilter {
+    public void Apply(string fileName) {
+        System.Console.WriteLine("filtering with High Contrast");
+    }
+}
+
+// BlackAndWhiteFilter.cs
+public class BlackAndWhiteFilter : IFilter {
+    public void Apply(string fileName) {
+        System.Console.WriteLine("filtering with B&W");
+    }
+}
+
+// ICompressor.cs
+public interface ICompressor {
+    void Compress(string fileName);
+}
+
+// JpegCompressor.cs
+public class JpegCompressor : ICompressor {
+    public void Compress(string fileName) {
+        System.Console.WriteLine("compressing with JPEG");
+    }
+}
+
+// PngCompressor.cs
+public class PngCompressor : ICompressor {
+    public void Compress(string fileName) {
+        System.Console.WriteLine("compressing with PNG");
+    }
+}
+
+// ImageStorage.cs
+public class ImageStorage {
+    private ICompressor compressor;
+    private IFilter filter;
+
+    public ImageStorage(ICompressor compressor, IFilter filter) {
+        this.compressor = compressor;
+        this.filter = filter;
+    }
+
+    public void Store(string fileName) {
+        compressor.Compress(fileName);
+        filter.Apply(fileName);
+    }
+}
+
+// Demo
+public class Program {
+    public static void Main(string[] args) {
+        var imageStorage = new ImageStorage(
+            new PngCompressor(),
+            new HighContrastFilter()
+        );
+
+        imageStorage.Store("image1");
+    }
+}
+
+```

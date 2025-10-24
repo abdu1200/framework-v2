@@ -1,0 +1,342 @@
+
+
+# Command Pattern/Undoable Command Pattern - <text>Implementation Guideline</text> 
+ 
+## <div>Proper Usage Guideline</div>
+The **Command Pattern** should be used when you need to **decouple the requester of an operation from the object that performs it**, enabling flexible and extensible execution of actions. In scenarios like an <span>HTML editor</span>, where users continuously perform formatting actions such as **bold, italic, or underline**, it’s inefficient and error-prone to handle these operations directly within the document class. Instead, each action should be represented as a **stand-alone command object** that knows how to execute and, if applicable, undo its specific operation.
+
+To effectively use the **Undoable Command Pattern**, every command should maintain its own internal state that allows it to **restore the previous state** of the receiver when an undo operation is requested. The <span>HtmlDocument</span> should remain lightweight, focusing purely on content manipulation, while **command objects** handle all execution and undo responsibilities. A separate <span>History class</span> should manage the collection of executed commands, allowing the system to easily traverse backward for undo operations.
+
+The <span>history manager</span> should centralize the tracking of executed commands. Each time a command is executed, it is added to the history. When undoing an operation, the invoker interacts with the history to retrieve the last executed command and call its <span>unexecute()</span> method. This separation keeps the **core document class focused on content manipulation**, while commands manage their undo state, and the history handles the sequencing, ensuring a clean and maintainable architecture.
+
+In short, proper use of the pattern involves maintaining **clear separation of responsibilities**, the document performs operations, commands encapsulate logic and undo state, the history manages sequencing, and the pool efficiently manages object reuse. This structure results in a **clean, extensible, and high-performance** design that scales well with continuous user actions.
+
+## <div>Pattern Performance And Optimizations</div>
+In the **standard implementation of the Command Pattern**, every user action generates a **new command object** that is instantiated, executed, and then stored in the history. Each object stores the previous state of the receiver (e.g., <span>HtmlDocument</span>) to allow undo functionality. This repeated **allocation of objects for each command** leads to **frequent memory allocation**. Once a command is undone and removed from history, the object sits idle in the memory and then gets deallocated by the system. This continuous **cycle of allocation and deallocation** creates significant **memory fragmentation** and **CPU overhead**, especially in applications where users perform frequent undoable operations.
+
+The **optimized implementation** addresses this inefficiency by introducing a <span>command object pool</span>, pre-allocating a fixed array of reusable command objects. When a user executes a command, an object is retrieved from the pool using a <span>round-robin allocation strategy</span>, configured with the current receiver and history, and then executed. After undoing, the command object remains alive in the pool because the pool maintains a persistent reference, preventing deallocation. This **eliminates the repeated memory allocation and deallocation**, reducing CPU overhead and memory fragmentation while keeping the system efficient.
+
+A key aspect of the optimization is **reusing command objects by reconfiguring their state**. When a command object is retrieved from the pool, it may still contain previous state data. The system reconfigures the object for the new operation, ensuring that old or irrelevant state does not interfere with the current execution. This strategy allows the **same objects to be repeatedly reused** without creating new instances, reducing the load on the memory manager and improving performance in high-frequency undo scenarios.
+
+Overall, this optimization balances **performance and maintainability**. By maintaining a **persistent pool of command objects** while centralizing undo logic in each command and managing execution history separately, the system remains modular, easy to extend, and much more efficient. Frequent undo operations no longer impose heavy **allocation or deallocation costs**, and the **CPU and memory overheads** are minimized without complicating the usage of commands or the undo system.
+
+
+This is a UML Diagram that shows the **interaction of components in the Command/UndoableCommand Pattern Optimized Implementation for the given design problem Example** 
+![Alt text](/commandopt.png)
+
+
+## <div>Optimized Implementation Template in Java</div>
+
+```java
+
+// Command interface
+public interface Command {
+    void execute();
+}
+
+// UndoableCommand interface
+public interface UndoableCommand extends Command {
+    void unexecute();
+}
+
+// Receiver - HtmlDocument
+public class HtmlDocument {
+    private String content;
+
+    public void makeBold() {
+        content = "<b>" + content + "</b>";
+    }
+
+    public String getContent() {
+        return content;
+    }
+
+    public void setContent(String content) {
+        this.content = content;
+    }
+}
+
+// History
+public class History {
+    private List<UndoableCommand> commands = new ArrayList<>();  
+
+    public void push(UndoableCommand command) {
+        commands.add(command);
+    }
+
+    public UndoableCommand pop() {
+        if (commands.isEmpty())
+            return null;
+        
+        return commands.remove(commands.size() - 1);
+    }
+    
+    public int size() {
+        return commands.size();
+    }
+}
+
+// Object Pool for BoldCommand reuse
+class CommandPool {
+    private static final int COMMAND_POOL_SIZE = 20;  // Fixed pool size
+    private BoldCommand[] commands = new BoldCommand[COMMAND_POOL_SIZE];  // Fixed pool
+    private int nextIndex = 0;  // Round-robin allocation
+    private boolean initialized = false;
+
+    public BoldCommand getBoldCommand(HtmlDocument htmlDocument, History history) {
+        // Initialize pool on first use
+        if (!initialized) {
+            for (int i = 0; i < COMMAND_POOL_SIZE; i++) {
+                commands[i] = new BoldCommand();
+            }
+            initialized = true;
+        }
+        
+        // Get next available command in round-robin fashion
+        BoldCommand cmd = commands[nextIndex];
+        nextIndex = (nextIndex + 1) % COMMAND_POOL_SIZE;
+        
+        // Configure command for use  
+        cmd.configure(htmlDocument, history);
+        
+        return cmd;
+    }
+}
+
+// ConcreteCommand - BoldCommand with object pooling
+public class BoldCommand implements UndoableCommand {
+    private String prevContent;
+    private HtmlDocument htmlDocument;
+    private History history;
+
+    // Configure for reuse from pool
+    public void configure(HtmlDocument htmlDocument, History history) {
+        this.htmlDocument = htmlDocument;
+        this.history = history;
+    }
+
+    @Override
+    public void unexecute() {
+        htmlDocument.setContent(prevContent);
+    }
+
+    @Override
+    public void execute() {
+        prevContent = htmlDocument.getContent();
+        htmlDocument.makeBold();
+        history.push(this);
+    }
+}
+
+// ConcreteCommand - UndoCommand
+public class UndoCommand implements Command {
+    private History history;
+
+    public UndoCommand(History history) {
+        this.history = history;
+    }
+
+    @Override
+    public void execute() {
+        UndoableCommand lastCommand = history.pop();
+        if (lastCommand != null) {
+            lastCommand.unexecute();
+        }
+    }
+}
+
+// Demo
+public class Main {
+    public static void main(String[] args) {
+        History history = new History();
+        HtmlDocument htmlDocument = new HtmlDocument();
+        CommandPool pool = new CommandPool();
+        
+        htmlDocument.setContent("hello");
+
+        BoldCommand boldCommand = pool.getBoldCommand(htmlDocument, history);
+        boldCommand.execute();
+        System.out.println("Content: " + htmlDocument.getContent());
+
+        UndoCommand undoCommand = new UndoCommand(history);
+        undoCommand.execute();
+        System.out.println("Content: " + htmlDocument.getContent());
+    }
+}
+
+```
+
+## <div> How the Optimized Implementation Applied to the Real World Example</div>
+
+In the **HTML editor example**, this optimized implementation ensures smooth and efficient execution of formatting commands, even under frequent use. When a user applies **bold formatting**, a <span>BoldCommand</span> object is obtained from the <span>CommandPool</span> instead of being created from scratch. This object is then **configured** with references to the <span>HtmlDocument</span> and <span>History</span>, ensuring it knows where to apply the change and how to record it. Once configured, the command calls the <span>makeBold()</span> method on the HtmlDocument, updating the text while storing the **previous content** internally for undo purposes.
+
+When the user decides to **undo** the action, an <span>UndoCommand</span> interacts with the <span>History</span> to retrieve the last executed command and call its <span>unexecute()</span> method. The BoldCommand then simply restores the **previous content**, effectively reversing the operation. Since the command came from the pre-allocated pool, it remains available for reuse after undoing, it’s not destroyed or deallocated. Instead, the <span>CommandPool</span> later reconfigures and reuses this same object for future actions, keeping memory stable and reducing overhead.
+
+This implementation creates a clean separation of roles: the <span>HtmlDocument</span> is responsible only for formatting logic, commands handle execution and undo logic, the <span>History</span> maintains the list of executed commands, and the <span>CommandPool</span> manages object reuse efficiently. Such separation leads to a **modular and maintainable system** that’s both efficient and easy to extend with new operations like ItalicCommand or UnderlineCommand.
+
+In practice, this means that even during **rapid editing sessions**, the editor remains **responsive and memory-efficient**. The optimized command pooling approach guarantees that undo operations work smoothly, without any performance degradation caused by constant object creation and destruction. The system achieves the desired functionality - **encapsulated actions with seamless undo capability**,  while maintaining high runtime efficiency.
+
+## <div>Optimization Implementation Template in C#</div>
+``` csharp
+using System;
+using System.Collections.Generic;
+
+// Command interface
+public interface ICommand
+{
+    void Execute();
+}
+
+// UndoableCommand interface
+public interface IUndoableCommand : ICommand
+{
+    void Unexecute();
+}
+
+// Receiver - HtmlDocument
+public class HtmlDocument
+{
+    private string content;
+
+    public void MakeBold()
+    {
+        content = "<b>" + content + "</b>";
+    }
+
+    public string GetContent()
+    {
+        return content;
+    }
+
+    public void SetContent(string content)
+    {
+        this.content = content;
+    }
+}
+
+// History
+public class History
+{
+    private List<IUndoableCommand> commands = new List<IUndoableCommand>();
+
+    public void Push(IUndoableCommand command)
+    {
+        commands.Add(command);
+    }
+
+    public IUndoableCommand Pop()
+    {
+        if (commands.Count == 0)
+            return null;
+
+        IUndoableCommand lastCommand = commands[commands.Count - 1];
+        commands.RemoveAt(commands.Count - 1);
+        return lastCommand;
+    }
+
+    public int Size()
+    {
+        return commands.Count;
+    }
+}
+
+// Object Pool for BoldCommand reuse
+public class CommandPool
+{
+    private const int COMMAND_POOL_SIZE = 20;
+    private BoldCommand[] commands = new BoldCommand[COMMAND_POOL_SIZE];
+    private int nextIndex = 0;
+    private bool initialized = false;
+
+    public BoldCommand GetBoldCommand(HtmlDocument htmlDocument, History history)
+    {
+        if (!initialized)
+        {
+            for (int i = 0; i < COMMAND_POOL_SIZE; i++)
+            {
+                commands[i] = new BoldCommand();
+            }
+            initialized = true;
+        }
+
+        BoldCommand cmd = commands[nextIndex];
+        nextIndex = (nextIndex + 1) % COMMAND_POOL_SIZE;
+
+        cmd.Configure(htmlDocument, history);
+
+        return cmd;
+    }
+}
+
+// ConcreteCommand - BoldCommand with object pooling
+public class BoldCommand : IUndoableCommand
+{
+    private string prevContent;
+    private HtmlDocument htmlDocument;
+    private History history;
+
+    // Configure for reuse from pool
+    public void Configure(HtmlDocument htmlDocument, History history)
+    {
+        this.htmlDocument = htmlDocument;
+        this.history = history;
+    }
+
+    public void Unexecute()
+    {
+        htmlDocument.SetContent(prevContent);
+    }
+
+    public void Execute()
+    {
+        prevContent = htmlDocument.GetContent();
+        htmlDocument.MakeBold();
+        history.Push(this);
+    }
+}
+
+// ConcreteCommand - UndoCommand
+public class UndoCommand : ICommand
+{
+    private History history;
+
+    public UndoCommand(History history)
+    {
+        this.history = history;
+    }
+
+    public void Execute()
+    {
+        IUndoableCommand lastCommand = history.Pop();
+        if (lastCommand != null)
+        {
+            lastCommand.Unexecute();
+        }
+    }
+}
+
+// Demo
+public class Program
+{
+    public static void Main(string[] args)
+    {
+        History history = new History();
+        HtmlDocument htmlDocument = new HtmlDocument();
+        CommandPool pool = new CommandPool();
+
+        htmlDocument.SetContent("hello");
+
+        BoldCommand boldCommand = pool.GetBoldCommand(htmlDocument, history);
+        boldCommand.Execute();
+        Console.WriteLine("Content: " + htmlDocument.GetContent());
+
+        UndoCommand undoCommand = new UndoCommand(history);
+        undoCommand.Execute();
+        Console.WriteLine("Content: " + htmlDocument.GetContent());
+    }
+}
+
+```
+
+
+

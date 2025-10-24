@@ -1,0 +1,52 @@
+---
+title: "Visitor Pattern "
+description: "A comprehensive implementation of the Chain of Responsibility pattern with practical examples and best practices."
+---
+
+# Pattern Solution - <text>The Visitor Pattern</text> 
+
+## <div>Design Pattern General Description</div>
+The **Visitor Pattern** is a **behavioral design pattern** that provides a structured way to **add new operations to an existing set of object classes** without altering those classes. It does this by **separating the algorithm (the operation logic)** from the objects it works on. Instead of placing every new behavior inside the elements themselves, the Visitor Pattern encapsulates these behaviors inside **separate “visitor” classes**, each representing a specific operation. This separation makes it possible to keep the original object structure clean and stable while freely adding new functionality over time.
+
+At the heart of the pattern are two key components: the **Element interface** (which represents the objects being operated on) and the **Visitor interface** (which declares methods for each element type). Each concrete visitor implements these methods to define specific behaviors for each type of element. By following this approach, the Visitor Pattern ensures that the **element hierarchy remains untouched** even when new operations are introduced. This design is particularly useful in systems that deal with **complex or hierarchical object structures**, such as syntax trees, document nodes, or graphic components.
+
+One of the main strengths of the Visitor Pattern is that it **adheres to the Open/Closed Principle**, meaning that classes are **open for extension but closed for modification**. Developers can introduce new operations, like exporting, analyzing, or transforming data, without editing any existing class. This reduces the risk of breaking old functionality and keeps the system more maintainable as it evolves. The element classes only need to provide a general method for accepting visitors, leaving the specific operational logic to the visitors themselves.
+
+In summary, the Visitor Pattern promotes **clean separation of responsibilities**. The object structure focuses solely on defining the relationships between elements, while visitor classes define what actions to perform on them. This design leads to **better organization, higher flexibility, and easier scalability**, making it a powerful solution for projects where new operations are frequently added to stable object hierarchies.
+
+## <div>How It Applies to the Real World Problem Example</div>
+
+In the **HTML editor example**, the Visitor Pattern perfectly solves the problem of adding new operations, like highlighting or converting to plain text, without modifying the existing node classes. Instead of defining multiple methods such as <span>highlight()</span> and <span>plainText()</span> inside the <span>HtmlNode</span> interface, we introduce a **generic operation interface** called <span>Operation</span> (the Visitor). This interface declares methods such as <span>apply(HeadingNode)</span> and <span>apply(AnchorNode)</span> that describe what the visitor can do for each specific node type. Each new operation will then be implemented as a **concrete visitor class**, like <span>HighlightOperation</span> or <span>PlainTextOperation</span>, each containing its own specialized logic.
+
+The <span>HtmlNode</span> **interface** (which acts as the Element) remains simple and clean, it now has only one method, <span>execute(Operation operation)</span>. Each concrete node class (like <span>HeadingNode</span> or <span>AnchorNode</span>) implements this method by calling <span>operation.apply(this)</span>. This small change delegates the execution responsibility to the visitor, allowing the visitor to decide how to handle that specific node type. The node classes no longer need to know the details of how an operation works; they just allow visitors to “visit” them.
+
+With this approach, **adding a new operation no longer requires modifying any node classes**. If we want to add a <span>ValidateOperation</span>, for example, we simply create a new visitor class that implements the <span>Operation</span> interface. The existing structure - <span>HtmlDocument</span>, <span>HtmlNode</span>, <span>HeadingNode</span>, and <span>AnchorNode</span> - remains completely unchanged. This drastically improves **maintainability**, since all logic related to a particular behavior is grouped inside one class, and the rest of the system stays stable.
+
+Ultimately, this design makes the **HTML document structure open for extension but closed for modification**. Developers can freely introduce new features as visitors without ever touching the node classes again. This clean separation of structure and behavior makes the system **more flexible, less error-prone, and easier to evolve**, which is exactly what the Visitor Pattern was designed to achieve.
+
+This is a <span>UML Diagram</span> that shows the **interaction of components in the Visitor Pattern as a solution to the given design problem Example** 
+![Alt text](/visitor.png)
+
+
+## <div>Code improvements of the Pattern</div>
+
+**Separation of Concerns**:
+The Visitor Pattern separates operation logic from the structure of the elements. This means that node classes focus solely on representing HTML elements, while visitor classes handle the logic of operations such as highlighting or exporting. This separation keeps the codebase organized and easier to understand.
+
+**Extensibility**:
+New behaviors can be introduced simply by creating new visitor classes that implement the <span>Operation</span> interface. There’s no need to modify existing node classes, making the system easy to extend as requirements grow or new operations are needed.
+
+**Open/Closed Principle Compliance**:
+Node classes remain closed for modification, ensuring that the structure of the system doesn’t need to change when adding new features. At the same time, the system stays open for extension through new visitor implementations, maintaining flexibility without sacrificing stability.
+
+**Centralized Logic**:
+Each visitor class holds all logic related to one specific operation in a single location. This centralization eliminates scattered logic across multiple node classes and makes it easier to debug, test, and update individual operations.
+
+**Single Responsibility Principle**:
+Every visitor class has a single, well-defined responsibility - handling one specific operation. This leads to cleaner class design, where each component has a focused purpose and fewer side effects.
+
+**Maintainability**:
+Because all operation-related logic is grouped into its own visitor classes, developers can easily maintain or modify behaviors without affecting other parts of the codebase. This simplifies long-term project maintenance and reduces the chance of introducing bugs.
+
+**No Interface Pollution**:
+The <span>HtmlNode</span> interface remains simple with just one method, <span>execute()</span>, instead of growing cluttered with multiple operation methods like <span>highlight()</span> or <span>plainText()</span>. This results in a cleaner, more stable interface that’s easier to implement and extend.

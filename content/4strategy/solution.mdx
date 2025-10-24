@@ -1,0 +1,44 @@
+---
+title: "Strategy Pattern"
+description: "A comprehensive implementation of the Chain of Responsibility pattern with practical examples and best practices."
+---
+
+# Pattern Solution - <text>The Strategy Pattern</text>
+
+## <div>Design Pattern General Description</div>
+The **Strategy Pattern** provides a highly **flexible** and **scalable** approach to software design by allowing developers to define a **family of algorithms** and encapsulate each one in its own independent class. Instead of embedding all algorithmic logic directly inside a main class, the pattern delegates responsibility to separate objects that share a common interface. This separation ensures that the **context class**, such as **ImageStorage**, can dynamically select and switch algorithms at **runtime** without being aware of the implementation details of each algorithm, promoting a cleaner and more maintainable architecture.
+
+At the core of the Strategy Pattern are three fundamental components. The **Strategy interface** defines a **contract** that all algorithms must follow, ensuring consistency in behavior. **ConcreteStrategy** classes implement this interface, providing specific algorithmic logic that can be swapped in and out as needed. The **Context class** maintains a reference to a Strategy object and delegates execution to it, relying solely on the interface methods. This design promotes **loose coupling**, allowing the context and its strategies to vary independently and evolve without impacting one another.
+
+By externalizing algorithm logic into separate classes, the Strategy Pattern greatly improves **code maintainability** and encourages **reusability**. Instead of modifying a bloated main class whenever a new algorithm is required, developers can simply create a new ConcreteStrategy and plug it into the existing context. This approach also replaces cumbersome **conditional statements** with **polymorphic method calls**, simplifying the main class logic and making the system easier to understand, extend, and debug over time.
+
+The Strategy Pattern is particularly effective in systems where **multiple algorithmic variations** are likely to change or grow over time. For example, when implementing image compression, sorting mechanisms, or data processing pipelines, the pattern allows new strategies to be added without touching the existing codebase. By adhering to principles such as **Open/Closed** and **Single Responsibility**, the Strategy Pattern not only provides runtime flexibility but also ensures that the system remains **modular**, **adaptable**, and robust against future changes.
+
+## <div>How It Applies to the Real World Problem Example</div>
+
+The **Strategy Pattern** directly addresses the challenges of complex conditional statements by introducing separate **interfaces** for each algorithmic family. For instance, the <span>Compressor</span> interface (acting as a Strategy) declares the <span>compress()</span> method, while the <span>Filter</span> interface (another Strategy) declares the <span>apply()</span> method. By defining these clear contracts, each algorithm is treated as an independent unit, allowing the **context class**, such as <span>ImageStorage</span>, to remain simple, focused, and unaware of the internal workings of each concrete algorithm. This separation ensures that adding new algorithms does not require modifying the main class, eliminating tightly coupled logic.
+
+Concrete algorithm classes, or **ConcreteStrategies**, implement these interfaces with their specific behaviors. Examples include <span>JpegCompressor</span> and <span>PngCompressor</span> for compression, as well as <span>HighContrastFilter</span> and <span>BlackAndWhiteFilter</span> for filtering operations. Each class encapsulates its own **algorithmic logic**, allowing <span>ImageStorage</span> to execute compression or filtering by delegating calls to the current strategy objects. This **composition-based approach** ensures that the context class does not need to include any conditional branching to determine which algorithm to run.
+
+By delegating responsibilities to strategy objects, the pattern allows <span>ImageStorage</span> to **use algorithms interchangeably**. For example, at runtime, a developer can swap a <span>PngCompressor</span> for a <span>JpegCompressor</span> or replace a HighContrastFilter with a BlackAndWhiteFilter without changing the core logic of the main class. Each strategy executes its own behavior when called, and the context class simply orchestrates their use. This polymorphic behavior transforms complex if-else chains into clean, manageable method calls, improving both readability and maintainability.
+
+The Strategy Pattern also **enhances extensibility and flexibility** in real-world applications. As new compression or filtering algorithms are developed, they can be added as new strategy classes and plugged into the existing system without affecting the <span>ImageStorage</span> class. This approach follows software design principles like **Open/Closed** and **Single Responsibility**, allowing the system to evolve gracefully. The result is a **modular**, **scalable**, and **testable architecture**, where each algorithm can be independently verified, maintained, or upgraded without impacting other parts of the application.
+
+This is a UML Diagram that shows the interaction of components in the Strategy Pattern for the given problem Example 
+![Alt text](/strategy.png)
+
+
+## <div>Code Qualtiy improvements of the Pattern</div>
+
+**Separation of Concerns**: The Strategy Pattern ensures that **algorithm-specific logic** is entirely separated from the **main business logic**. Each algorithm resides in its own class, allowing the <span>ImageStorage</span> context to focus purely on orchestrating operations rather than implementing the algorithms themselves. This separation improves readability and keeps the core logic clean.
+
+**Extensibility**: Adding new algorithms becomes straightforward, developers simply create new **strategy implementations** without touching existing classes. This makes the system highly **extensible**, as the context can accommodate new behaviors dynamically, without risking regressions in the existing code.
+
+**Eliminates Conditional Logic**: With strategies in place, there is no need for long **if-else** or **switch** statements in the main methods. Each algorithm is invoked polymorphically through its interface, making the system simpler, more readable, and easier to maintain.
+
+**Single Responsibility**: Each **algorithm class** handles only its own implementation, adhering to the **Single Responsibility Principle**. The context class delegates execution, ensuring that no single class becomes overloaded with multiple responsibilities.
+
+**Open/Closed Principle**: The <span>ImageStorage</span> class remains **closed for modification but open for extension**, as new strategies can be added without altering the existing codebase. This principle ensures stability while supporting ongoing system growth.
+
+**Polymorphism**: Runtime behavior can change dynamically through **composition** rather than conditionals. By interacting with the **Strategy interface**, the context class can swap algorithms at runtime, leveraging polymorphic method calls for flexible execution   
+

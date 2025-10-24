@@ -1,0 +1,41 @@
+---
+title: "Decorator Pattern"
+description: "A comprehensive implementation of the Chain of Responsibility pattern with practical examples and best practices."
+---
+
+# Pattern Solution - <text>The Decorator Pattern</text>
+
+## <div>Design Pattern General Description</div>
+The Decorator Pattern is a **structural design pattern** that provides a flexible alternative to inheritance for extending functionality. Instead of creating new subclasses for every combination of features, the pattern allows developers to dynamically “wrap” objects with additional behaviors at runtime. It achieves this by defining a common interface for both the base component and its decorators, enabling them to be used interchangeably within the system.
+
+At the heart of the pattern is the concept of **composition over inheritance**. The base component defines the core functionality, while decorators implement the same interface and contain a reference to another component (which can be either the base object or another decorator). Each decorator adds its own behavior before or after delegating the operation to the wrapped component. This structure allows multiple decorators to be stacked in any order, creating a dynamic and flexible chain of behaviors.
+
+The Decorator Pattern aligns closely with core design principles such as the **Open/Closed Principle**, as new functionalities can be introduced by simply creating new decorators without altering existing code. It also supports the **Single Responsibility Principle**, since each decorator focuses on one specific feature or concern. Moreover, the pattern promotes **runtime flexibility**, as developers can easily add or remove features without modifying the object’s class definition.
+
+This pattern is widely used in software frameworks and libraries that require feature layering or dynamic behavior modification, such as input/output streams in Java, middleware in web frameworks, and graphical user interfaces where multiple visual effects are applied to the same component.
+
+## <div>How It Applies to the Real World Problem Example</div>
+
+The **Decorator Pattern** resolves the class explosion problem in the cloud storage example by introducing a <span>Stream</span> interface that declares the essential operations, such as <span>write()</span>. The base <span>CloudStream</span> class (Concrete Component) implements this interface to provide the basic read/write functionality. Decorator classes such as **EncryptedCloudStream** and **CompressedCloudStream** also implement the **Stream** interface, but they use **composition** instead of inheritance—they contain a reference to another **Stream** object.
+
+Each decorator class defines its specific behavior while delegating the rest of the operation to the wrapped object. For example, the <span>EncryptedCloudStream</span> encrypts data before calling **write()** on the wrapped stream, and the <span>CompressedCloudStream</span> compresses data before delegating the call. By stacking these decorators dynamically, developers can easily create complex combinations like an encrypted and compressed stream without writing new subclasses.
+
+This approach **eliminates** the need for predefined feature combinations and allows new decorators to be introduced independently. Developers can freely combine **decorators** in any order, such as encryption before compression or vice versa, **depending on the system’s requirements**. Additionally, decorators can be composed at runtime, enabling features to be enabled, disabled, or reordered without modifying any existing class definitions.
+
+By transforming static inheritance into dynamic composition, the Decorator Pattern makes the architecture **modular**, **maintainable**, **and scalable**. Each decorator is self-contained and reusable, reducing duplication and making the overall system far easier to evolve. This design ensures that extending functionality no longer requires restructuring the entire class hierarchy, resulting in a more adaptable and cleaner software architecture.
+
+This is a UML Diagram that shows the interaction of components in the Decorator Pattern for the given Example 
+![Alt text](/decorator.png)
+
+
+## <div>Code improvements of the Pattern</div>
+
+**Dynamic Feature Composition**: The decorator pattern allows **features to be combined at runtime** without the need to create predefined combination classes. Each feature is implemented as a separate decorator, which can be dynamically applied to an object, providing **flexible and modular behavior**.
+
+**Eliminates Class Explosion**: By using decorators instead of inheritance, there is no **need to create separate classes** for every possible feature combination. This **prevents class explosion** and reduces unnecessary duplication, making the system easier to understand and manage.
+
+**Single Responsibility and Open/Closed Principle**: Each decorator is responsible for **only one specific behavior**, keeping the code modular and adhering to the **Single Responsibility Principle**. 
+
+**Flexible Architecture**, Maintainability, and **Runtime Flexibility**: The decorator pattern supports any combination of decorators applied in any order, providing a highly flexible architecture
+
+**Feature logic is centralized** in individual decorator classes, improving maintainability, and decorators can be added or **removed dynamically** at runtime, enabling the system to adapt to changing requirements without impacting the core functionality.

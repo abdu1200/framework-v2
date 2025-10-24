@@ -1,0 +1,225 @@
+---
+title: "Design Problem 5"
+description: "Managing Hierarchical Object Structures Without Complex Type Handling..."
+descriptioning: "In object-oriented software systems, developers often encounter the challenge of representing hierarchical or part-whole relationships between objects. In such systems, certain objects may be individual entities (like shapes or files), while others act as containers or composites that hold multiple objects of the same type. The difficulty arises when the system must allow clients to treat individual and composite objects uniformly. Without a consistent abstraction, developers are forced to write additional logic to handle these differences manually..."
+category: "Structural"
+difficulty: "Medium"
+---
+
+# Problem: <text>Managing Hierarchical Object Structures Without Complex Type Handling</text>
+  
+## <div>General Design Problem Description</div>
+
+In **object-oriented software systems**, developers often encounter the challenge of representing **hierarchical or part-whole relationships** between objects. In such systems, certain objects may be **individual entities** (like shapes or files), while others act as **containers or composites** that hold multiple objects of the same type. The difficulty arises when the system must allow **clients to treat individual and composite objects uniformly**. Without a consistent abstraction, developers are forced to write additional logic to handle these differences manually.
+
+The lack of a **common interface** for both simple and composite objects leads to **type-checking and conditional branching** scattered across the codebase. Developers may need to check whether an object is a single element or a collection before performing operations like rendering, resizing, or deleting. This approach not only makes the code more complex but also breaks **polymorphism**, since client code now needs to know the exact type of the object it is operating on. Over time, these repeated checks increase the potential for **errors and code duplication**.
+
+Furthermore, such designs **violate key design principles** like the **Open/Closed Principle** and **Encapsulation**, since adding new operations (such as move, rotate, or resize) often requires modifying existing classes. Each new operation may require repeating the same type-checking logic, creating **rigid and error-prone systems** that are difficult to maintain or extend. As the project grows, developers find themselves managing an increasingly tangled web of object types and conditions, slowing down development and reducing code readability.
+
+Ultimately, the **core problem** is the absence of a **unified abstraction** that can represent both simple and composite objects under a single contract. Without this, the design becomes **fragile, inflexible, and tightly coupled**, making future evolution of the system costly and complex. A more robust approach should allow clients to execute operations on both single and composite structures seamlessly — without needing to know their internal composition.
+
+## <div>Design Problem Real-world Example</div>
+
+Consider a **drawing or presentation software** such as PowerPoint or Illustrator, where users can create and manipulate various **shapes** (like rectangles, circles, and lines). These shapes can also be **grouped together** to form a composite object, allowing users to move or resize them as a single unit. Developers often start by creating two classes - a **Shape** class for individual elements and a **Group** class for collections of shapes. Each shape can render itself using a <span>render()</span> method, while the Group class holds a list of shapes and iterates through them to render each one.
+
+However, this approach quickly reveals its limitations. If a <span>Group</span> cannot contain another Group (because the <span>add()</span> method only accepts <span>Shape</span> objects), the hierarchical flexibility is lost - groups can no longer form **nested structures**. Developers might attempt to solve this by changing the parameter type to a general <span>Object</span>, but that introduces a new problem: the <span>Object</span> type doesn’t define the <span>render()</span> method. As a result, developers must use **type checking** (<span>instanceof</span>) and **casting** to ensure the correct method is called for each element - whether it’s a Shape or another Group.
+
+As more features like <span>move()</span>, <span>resize()</span>, or <span>rotate()</span> are added, each method within the Group class must repeat the same **casting and type-checking logic** for every operation. This redundancy not only bloats the code but also increases the risk of inconsistencies, as one method might handle certain object types differently than another. Whenever a new operation is introduced, **developers must ensure the same checks and casts are consistently applied** across multiple methods. Even a small oversight can cause inconsistent behavior, where one operation correctly handles both shapes and groups while another fails to recognize nested composites. The logic becomes harder to maintain and debug, especially in large applications with multiple nested groups.
+
+Over time, this type-heavy and repetitive structure transforms the once straightforward design into a **maintenance nightmare**. Any modification to how shapes or groups behave now requires developers to revisit and update several areas of code, introducing a strong coupling <span>between</span> components that should ideally remain independent, violating **code reuse**, **modularity** and **extensibility** principles. The inability to treat individual and grouped objects uniformly makes the system **fragile, cluttered, and difficult to evolve**.
+
+## <div>Design Problem Code Example in Java</div>
+
+```java
+// Shape.java
+public class Shape {
+    private String name;
+
+    public Shape(String name) {
+        this.name = name;
+    }
+
+    public void render() {
+        System.out.println(name + " rendered");
+    }
+
+    public void move(int x, int y) {
+        System.out.println(name + " moved");
+    }
+}
+
+// Group.java
+public class Group {
+    List<Object> objects = new ArrayList<>();
+
+    public void add(Object object) {
+        objects.add(object);
+    }
+
+    public void render() {
+        for (var object : objects) {
+            if (object instanceof Shape)
+                ((Shape)object).render();
+            else if (object instanceof Group)
+                ((Group)object).render();
+        }
+    }
+
+    public void move(int x, int y) {
+        for (var object : objects) {
+            if (object instanceof Shape)
+                ((Shape)object).move(x, y);
+            else if (object instanceof Group)
+                ((Group)object).move(x, y);
+        }
+    }
+}
+
+// Main.java
+public class Main {
+    public static void main(String[] args) {
+        // Create individual shapes
+        Shape circle = new Shape("Circle");
+        Shape square = new Shape("Square");
+        Shape triangle = new Shape("Triangle");
+
+        // Create first group and add shapes
+        Group group1 = new Group();
+        group1.add(circle);
+        group1.add(square);
+
+        // Create another group and add a shape and group1 inside it
+        Group group2 = new Group();
+        group2.add(triangle);
+        group2.add(group1);
+
+        // Try rendering and moving all objects
+        System.out.println("Rendering group2 contents:");
+        group2.render();
+
+        System.out.println("\nMoving group2 contents:");
+        group2.move(10, 20);
+    }
+}
+
+```
+
+## <div>Design Problem Code Example in C# </div>
+
+```csharp
+
+// Shape.cs
+using System;
+
+public class Shape
+{
+    private string name;
+
+    public Shape(string name)
+    {
+        this.name = name;
+    }
+
+    public void Render()
+    {
+        Console.WriteLine(name + " rendered");
+    }
+
+    public void Move(int x, int y)
+    {
+        Console.WriteLine(name + " moved");
+    }
+}
+
+// Group.cs
+using System;
+using System.Collections.Generic;
+
+public class Group
+{
+    List<object> objects = new List<object>();
+
+    public void Add(object obj)
+    {
+        objects.Add(obj);
+    }
+
+    public void Render()
+    {
+        foreach (var obj in objects)
+        {
+            if (obj is Shape)
+                ((Shape)obj).Render();
+            else if (obj is Group)
+                ((Group)obj).Render();
+        }
+    }
+
+    public void Move(int x, int y)
+    {
+        foreach (var obj in objects)
+        {
+            if (obj is Shape)
+                ((Shape)obj).Move(x, y);
+            else if (obj is Group)
+                ((Group)obj).Move(x, y);
+        }
+    }
+}
+
+// Program.cs
+using System;
+
+public class Program
+{
+    public static void Main(string[] args)
+    {
+        // Create individual shapes
+        Shape circle = new Shape("Circle");
+        Shape square = new Shape("Square");
+        Shape triangle = new Shape("Triangle");
+
+        // Create first group and add shapes
+        Group group1 = new Group();
+        group1.Add(circle);
+        group1.Add(square);
+
+        // Create another group and add a shape and group1 inside it
+        Group group2 = new Group();
+        group2.Add(triangle);
+        group2.Add(group1);
+
+        // Try rendering and moving all objects
+        Console.WriteLine("Rendering group2 contents:");
+        group2.Render();
+
+        Console.WriteLine("\nMoving group2 contents:");
+        group2.Move(10, 20);
+    }
+}
+
+
+```
+
+## <div>Design Code Quality Issues</div> 
+
+**Groups cannot contain other groups without type casting**:
+Because the <span>add()</span> method accepts only generic <span>Object</span> types, developers must explicitly cast objects back to their original types during execution. This dependency on type casting increases the risk of **runtime errors** and makes the code harder to follow.
+
+**Repeated type checking and casting logic across multiple operations**:
+Every method, such as <span>render()</span>, <span>move()</span>, or <span>resize()</span>, must verify whether the current element is a <span>Shape</span> or a <span>Group</span>. This leads to **duplicated logic**, reducing maintainability and making the system prone to inconsistency.
+
+**Violates the Open/Closed Principle**:
+To introduce new operations or object types, the developer must **modify the existing Group class**, a direct violation of the Open/Closed Principle. Instead of being open for extension and closed for modification, the design forces changes in multiple places whenever new features are added.
+
+**Poor maintainability due to scattered casting logic**
+Since each operation contains its own casting logic, fixing a single bug related to type handling requires changes across several methods. This repetition increases the **maintenance overhead** and makes the system error-prone.
+
+**Runtime ClassCastException risks**.
+If an invalid object type is accidentally added to the Group, the system will throw a <span>ClassCastException</span> during runtime, compromising stability and reliability.
+
+**No uniform treatment of individual and composite structures**:
+The client must know whether it’s working with a Shape or a Group, breaking the **abstraction barrier**. This eliminates polymorphic behavior and leads to tightly coupled client code.
+
+**Difficult to extend when adding new operations**
+As new behaviors (like rotation or scaling) are introduced, developers must update both the Shape and Group classes, replicating the same type-checking pattern each time, a clear sign of poor **scalability** and lack of abstraction.

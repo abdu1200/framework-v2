@@ -1,0 +1,159 @@
+---
+title: "Composite - Optimized Implementation"
+description: "An advanced implementation with error handling, logging, and performance optimizations."
+category: "Behavioral"
+difficulty: "Hard"
+---
+
+# Composite - Optimized Implementation
+
+**Proper usage guideline**: Initialize the ComponentPool early in your application lifecycle with pool sizes that reflect your actual usage patterns - analyze your application's component creation patterns to set SHAPE_POOL_SIZE and GROUP_POOL_SIZE appropriately, erring on the side of slightly larger pools to avoid exhaustion during peak usage periods. Always call initPool() during application startup or dependency injection configuration, and ensure that pool initialization happens before any concurrent access begins to avoid thread safety issues. When designing your component creation workflow, always check for null returns from createShape() and createGroup() methods, implementing graceful degradation strategies such as falling back to direct object instantiation or queuing requests for later processing when pools are exhausted. Design your Group components to be truly reusable by implementing comprehensive cleanup in the clearChildren() method, ensuring that all internal state is properly reset when objects are returned to the pool for reuse. Manage the object lifecycle carefully by calling resetPool() at appropriate intervals - typically between processing batches, at the end of user sessions, or during planned maintenance windows when you can safely reset all pooled objects. Be particularly careful with object references when using pooled components, as holding references to pooled objects beyond their intended lifecycle can lead to subtle bugs when those objects are reused for different purposes. The performance benefits of this pattern are most apparent when the same application thread repeatedly creates and destroys similar component hierarchies, so consider your application's threading model when deciding whether the optimization overhead is justified.RetryClaude can make mistakes. Please double-check responses.
+
+```java
+import java.util.ArrayList;
+import java.util.List;
+
+// Component interface (maintained)
+interface Component {
+    void render();
+    boolean isComposite();
+}
+
+// Leaf: Shape
+class Shape implements Component {
+    @Override
+    public void render() {
+        System.out.println("shape rendered");
+    }
+    
+    @Override
+    public boolean isComposite() {
+        return false;
+    }
+}
+
+// Composite: Group
+class Group implements Component {
+    private List<Component> children = new ArrayList<>();
+
+    public void addComponent(Component component) {
+        children.add(component);
+    }
+
+    @Override
+    public void render() {
+        for (Component child : children) {
+            child.render();
+        }
+    }
+    
+    @Override
+    public boolean isComposite() {
+        return true;
+    }
+    
+    // Clear children for pool reset
+    void clearChildren() {
+        children.clear();
+    }
+}
+
+// Object pooling for Java
+class ComponentPool {
+    private static final int SHAPE_POOL_SIZE = 200;
+    private static final int GROUP_POOL_SIZE = 100;
+    
+    private static Shape[] shapePool = new Shape[SHAPE_POOL_SIZE];
+    private static Group[] groupPool = new Group[GROUP_POOL_SIZE];
+    private static int shapeCount = 0;
+    private static int groupCount = 0;
+    private static boolean initialized = false;
+
+    // Initialize pool
+    public static void initPool() {
+        if (!initialized) {
+            // Pre-create shapes
+            for (int i = 0; i < SHAPE_POOL_SIZE; i++) {
+                shapePool[i] = new Shape();
+            }
+            
+            // Pre-create groups
+            for (int i = 0; i < GROUP_POOL_SIZE; i++) {
+                groupPool[i] = new Group();
+            }
+            
+            initialized = true;
+        }
+        
+        shapeCount = 0;
+        groupCount = 0;
+    }
+
+    public static Shape createShape() {
+        if (shapeCount >= SHAPE_POOL_SIZE) {
+            return null; // Pool exhausted - graceful degradation
+        }
+        return shapePool[shapeCount++];
+    }
+
+    public static Group createGroup() {
+        if (groupCount >= GROUP_POOL_SIZE) {
+            return null; // Pool exhausted - graceful degradation
+        }
+        
+        Group group = groupPool[groupCount++];
+        group.clearChildren(); // Reset for reuse
+        return group;
+    }
+    
+    // Reset pool for reuse
+    public static void resetPool() {
+        // Clear all group children
+        for (int i = 0; i < groupCount; i++) {
+            groupPool[i].clearChildren();
+        }
+        
+        shapeCount = 0;
+        groupCount = 0;
+    }
+    
+    public static int getShapeCount() {
+        return shapeCount;
+    }
+    
+    public static int getGroupCount() {
+        return groupCount;
+    }
+}
+
+// Demo
+public class Main {
+    public static void main(String[] args) {
+        ComponentPool.initPool();
+        
+        Group group1 = ComponentPool.createGroup();
+        group1.addComponent(ComponentPool.createShape());
+        group1.addComponent(ComponentPool.createShape());
+
+        Group group2 = ComponentPool.createGroup();
+        group2.addComponent(ComponentPool.createShape());
+        group2.addComponent(ComponentPool.createShape());
+
+        Group mainGroup = ComponentPool.createGroup();
+        mainGroup.addComponent(group1);
+        mainGroup.addComponent(group2);
+
+        mainGroup.render();
+
+        System.out.println("Objects allocated: " + ComponentPool.getShapeCount() + 
+                          " shapes, " + ComponentPool.getGroupCount() + " groups");
+        
+        ComponentPool.resetPool();
+    }
+}
+
+
+```
+
+
+**When to use**: Initialize the ComponentPool early in your application lifecycle with pool sizes that reflect your actual usage patterns - analyze your application's component creation patterns to set SHAPE_POOL_SIZE and GROUP_POOL_SIZE appropriately, erring on the side of slightly larger pools to avoid exhaustion during peak usage periods. Always call initPool() during application startup or dependency injection configuration, and ensure that pool initialization happens before any concurrent access begins to avoid thread safety issues. When designing your component creation workflow, always check for null returns from createShape() and createGroup() methods, implementing graceful degradation strategies such as falling back to direct object instantiation or queuing requests for later processing when pools are exhausted. Design your Group components to be truly reusable by implementing comprehensive cleanup in the clearChildren() method, ensuring that all internal state is properly reset when objects are returned to the pool for reuse. Manage the object lifecycle carefully by calling resetPool() at appropriate intervals - typically between processing batches, at the end of user sessions, or during planned maintenance windows when you can safely reset all pooled objects. Be particularly careful with object references when using pooled components, as holding references to pooled objects beyond their intended lifecycle can lead to subtle bugs when those objects are reused for different purposes. The performance benefits of this pattern are most apparent when the same application thread repeatedly creates and destroys similar component hierarchies, so consider your application's threading model when deciding whether the optimization overhead is justified.RetryClaude can make mistakes. Please double-check responses.

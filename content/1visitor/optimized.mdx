@@ -1,0 +1,104 @@
+---
+title: "Chain of Responsibility - Optimized Implementation"
+description: "An advanced implementation with error handling, logging, and performance optimizations."
+category: "Behavioral"
+difficulty: "Hard"
+---
+
+# Chain of Responsibility - Optimized Implementation
+
+Guideline: This implementation includes advanced features like logging, error handling, and performance optimizations.
+
+```java
+// HttpRequest
+class HttpRequest {
+    private String username;
+    private String password;
+
+    public HttpRequest(String username, String password) {
+        this.username = username;
+        this.password = password;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+}
+
+// Handler interface for function objects
+interface Handler {
+    boolean handle(HttpRequest request);
+}
+
+// Handler Chain with cache-friendly array structure
+class HandlerChain {
+    private static final int MAX_HANDLERS = 16;  // Fixed buffer size
+    private Handler[] handlers = new Handler[MAX_HANDLERS];  // Fixed array for contiguous memory
+    private int handlerCount = 0;
+
+    public boolean addHandler(Handler handler) {
+        if (handlerCount >= MAX_HANDLERS) {
+            return false; // Chain full
+        }
+        handlers[handlerCount] = handler;
+        handlerCount++;
+        return true; // Success
+    }
+
+    public void handle(HttpRequest request) {
+        for (int i = 0; i < handlerCount; i++) {
+            if (handlers[i].handle(request)) {
+                return; // Stop processing if handler returns true
+            }
+        }
+    }
+}
+
+// Concrete Handler Functions
+class AuthenticatorHandler implements Handler {
+    public boolean handle(HttpRequest request) {
+        boolean isValid = ("karim".equals(request.getUsername()) && 
+                          "12345678".equals(request.getPassword()));
+        System.out.println("Authentication");
+        return !isValid; // Stop if invalid, continue if valid
+    }
+}
+
+class CompressorHandler implements Handler {
+    public boolean handle(HttpRequest request) {
+        System.out.println("Compression");
+        return false; // Continue to next handler
+    }
+}
+
+// Client: WebServer
+class WebServer {
+    private HandlerChain chain;
+
+    public WebServer(HandlerChain chain) {
+        this.chain = chain;
+    }
+
+    public void handle(HttpRequest request) {
+        chain.handle(request);
+    }
+}
+
+// Demo
+public class Main {
+    public static void main(String[] args) {
+        HttpRequest request = new HttpRequest("karim", "12345678");
+        
+        // Build pipeline using cache-friendly array
+        HandlerChain chain = new HandlerChain();
+        chain.addHandler(new AuthenticatorHandler());  // First in chain
+        chain.addHandler(new CompressorHandler());     // Second in chain
+        
+        WebServer server = new WebServer(chain);
+        server.handle(request);
+    }
+}

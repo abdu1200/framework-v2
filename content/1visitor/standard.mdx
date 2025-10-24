@@ -1,0 +1,277 @@
+---
+title: "Visitor Pattern"
+description: "An advanced implementation with error handling, logging, and performance optimizations."
+category: "Behavioral"
+difficulty: "Hard"
+---
+
+# Visitor Pattern - <text>Implementation Guideline</text>
+ 
+## <div>Proper Usage Guideline</div>
+The **Visitor Pattern** should be applied when you have a **collection of related but different object types** that share a common structure, and you want to **perform new operations on them without altering their class definitions**. It’s ideal for scenarios where the object hierarchy is **stable**, meaning that the element types - such as nodes, shapes, or components - are **fixed and well known**, while the operations performed on them are **expected to change or grow** over time. This separation keeps the structure intact but allows new behaviors to be introduced externally through visitors, giving developers flexibility and scalability.
+
+To implement this pattern effectively, first define a **stable element interface** that provides a single entry point, such as an <span>execute()</span> or <span>accept()</span> method. This method acts as a bridge that lets external visitors interact with the element without exposing its internal details. Then define a **Visitor interface** (like <span>Operation</span> in this example) that declares a **distinct method for each concrete element type**, ensuring that visitors know exactly what type they are operating on. This structure enables **type-safe and organized extensions**, where every new operation is represented by its own visitor class.
+
+When using the Visitor Pattern, always aim to **keep the element hierarchy stable**. If the hierarchy changes frequently, such as adding or removing node types regularly, the pattern can become cumbersome because each change requires updating the visitor interface. Therefore, it’s most beneficial in projects where the **data structure is relatively fixed** and **new operations are added often**, such as in document parsers, compilers, editors, or data analysis tools. The main focus should be on **centralizing operation logic inside visitor classes** rather than spreading it across multiple element classes.
+
+Lastly, ensure that **each visitor class has a single, clear purpose** - for instance, one visitor for highlighting, another for exporting, another for validation, and so on. This promotes **separation of concerns** and simplifies maintenance, since modifying one visitor’s logic doesn’t affect others. The ultimate goal of using this pattern is to **add new operations easily, without modifying the existing codebase**, preserving both flexibility and long-term stability.
+
+
+## <div>Pattern Performance And Optimizations</div>
+The **standard implementation of the Visitor Pattern** uses what’s called **double dispatch**, meaning that for every operation, **two dynamic method calls** happen at runtime. While this ensures flexibility and type-safety, it introduces **significant CPU overhead**, especially in large systems with deep hierarchies or frequent visitor invocations. Let’s break this down to understand where the performance cost comes from and how the optimization improves it.
+
+The first overhead occurs when the system calls the <span>execute()</span> **method** on the node (for example, <span>node.execute(operation);</span>). In this call, the actual object type - whether it’s a <span>HeadingNode</span> or an <span>AnchorNode</span> - must be determined at runtime through **dynamic dispatch**. This process relies on the class’s **vtable (virtual method table)**, where the JVM or runtime engine looks up the correct implementation to invoke. This lookup and resolution process adds extra runtime cost because it’s **computed dynamically** for every single node, every time an operation runs. When you have many nodes, this becomes a considerable performance burden.
+
+The second overhead occurs when the node, inside its <span>execute()</span> method, calls <span>operation.apply(this)</span>. This again triggers **another dynamic dispatch**, because the system must determine which specific visitor subclass - such as <span>HighlightOperation</span> or <span>PlainTextOperation</span> - is currently in use. Additionally, since the visitor interface (<span>Operation</span>) defines **overloaded methods** like <span>apply(HeadingNode)</span> and <span>apply(AnchorNode)</span>, the system must perform **extra runtime resolution** to figure out which overloaded method to call based on the node’s actual type. This combination of **two dynamic lookups** - one for the element and one for the visitor - makes the double dispatch process **CPU-intensive and slower**, especially in performance-sensitive applications.
+
+The optimized implementation addresses these inefficiencies by removing both layers of dynamic dispatch and replacing them with **compile-time direct method calls** and **explicitly named method invocations**. For the first dispatch, instead of calling <span>node.execute()</span>, the pattern introduces a **VisitorExecutor** class with a **static execute()** method that uses a **switch statement on the NodeType enumeration**. Because static methods belong to the class itself, the compiler already knows **exactly which method to call, allowing it to resolve the call at compile time**. This combination — the **static method** and the **switch-based node type resolution**, allows the compiler to determine exactly which path to execute at compile time, avoiding any runtime type checking or vtable lookup. So, when we call <span>VisitorExecutor.execute(node, operation);</span>, the method call is made directly, and the switch immediately selects the right node type, **completely removing the first dispatch overhead**.
+
+For the **second dispatch**, the optimization continues inside the <span>VisitorExecutor</span>. Here, instead of relying on overloaded methods and dynamic lookups, the executor uses **explicit method calls** like <span>operation.applyHeading(node)</span> or <span>operation.applyAnchor(node)</span>. This approach simplifies the second dispatch by **directly naming the target method**, so the runtime doesn’t have to figure out which overloaded **apply()** method to use. In other words, the system already knows **which exact method to call** based on the node’s type, reducing CPU workload and execution time. Overall, this optimization transforms the Visitor Pattern from a **runtime-dynamic process** into a **compile-time predictable one**, leading to **faster execution and lower resource consumption** while preserving all the architectural benefits of the pattern.
+
+
+This is a <span>UML Diagram</span> that shows the **interaction of components in the Visitor Pattern optimized implementation for the given design problem Example** 
+![Alt text](/visitoropt.png)
+
+
+## <div>Optimized Implementation Template in Java</div>
+
+```java
+// NodeType.java 
+enum NodeType {
+HEADING, ANCHOR
+}
+
+// Operation.java 
+interface Operation {                      // Operation interface
+    void applyHeading(HtmlNode heading);
+    void applyAnchor(HtmlNode anchor);
+}
+
+// HighlightOperation.java
+class HighlightOperation implements Operation {
+    @Override
+    public void applyHeading(HtmlNode heading) {
+        System.out.println("highlight - heading");  
+    }
+
+    @Override
+    public void applyAnchor(HtmlNode anchor) {
+        System.out.println("highlight - anchor");
+    }
+}
+
+// PlainTextOperation.java
+class PlainTextOperation implements Operation {
+    @Override
+    public void applyHeading(HtmlNode heading) {
+        System.out.println("text - heading");
+    }
+
+    @Override
+    public void applyAnchor(HtmlNode anchor) {
+        System.out.println("text - anchor");
+    }
+}
+
+
+// HtmlNode.java
+interface HtmlNode {
+    NodeType getNodeType();
+}
+
+// HeadingNode.java  
+class HeadingNode implements HtmlNode {
+    @Override
+    public NodeType getNodeType() {
+        return NodeType.HEADING;
+    }
+}
+
+// AnchorNode.java
+class AnchorNode implements HtmlNode {
+    @Override
+    public NodeType getNodeType() {
+        return NodeType.ANCHOR;
+    }
+}
+
+// VisitorExecutor.java 
+class VisitorExecutor {
+    // Direct method call based on type using method references
+    public static void execute(HtmlNode node, Operation operation) {
+        // Switch statement with direct method invocation - no virtual method resolution
+        switch (node.getNodeType()) {
+            case HEADING:
+                operation.applyHeading(node); // Single method call - method reference approach
+                break;
+            case ANCHOR:
+                operation.applyAnchor(node); // Single method call - method reference approach
+                break;
+            default:
+                System.out.println("Unknown node type");
+                break;
+        }
+    }
+}
+
+// HtmlDocument.java 
+class HtmlDocument {
+    private List<HtmlNode> nodes = new ArrayList<>();
+
+    public void add(HtmlNode node) {
+        nodes.add(node);
+    }
+
+    public void execute(Operation operation) {
+        for (HtmlNode node : nodes) {
+            VisitorExecutor.execute(node, operation); // Single dispatch - eliminates costly double dispatch
+        }
+    }
+}
+
+// Demo
+public class Main {
+    public static void main(String[] args) {
+        HtmlDocument document = new HtmlDocument();
+        document.add(new HeadingNode());
+        document.add(new AnchorNode());
+        document.execute(new HighlightOperation());
+    }
+}
+```
+
+## <div>How the Optimized Implementation Applied to the Real World Example</div>
+
+In the **HTML editor example**, the optimized Visitor Pattern implementation efficiently solves the problem of adding new operations to the document structure while keeping it clean and stable. The <span>HtmlDocument</span> class serves as the **container** for all HTML nodes, while each node -represented by <span>HeadingNode</span> and <span>AnchorNode</span>, implements the simplified **HtmlNode** interface. Instead of having multiple operation methods within these node classes, each node identifies itself using the <span>NodeType</span> **enumeration**, making it easy to distinguish between different types at runtime without adding extra complexity.
+
+The **Operation interface** defines all possible actions that can be performed on the nodes, such as <span>applyHeading()</span> and <span>applyAnchor()</span>. Each operation, like <span>HighlightOperation</span> or <span>PlainTextOperation</span>, implements this interface and provides its specific logic for the two node types. This keeps all operation-related code **centralized inside the visitor classes**, ensuring that the node structure never needs to change when new features are added. Developers can easily create a new visitor class for additional features - such as <span>ExportOperation</span> or <span>ValidateOperation</span>, without touching any existing node or document code.
+
+When an operation is executed, the <span>HtmlDocument</span> iterates through its nodes and calls the static <span>VisitorExecutor.execute(node, operation)</span> method. This executor uses a simple <span>switch</span> **statement** based on the node’s type to determine which visitor method to invoke. For example, if the node type is <span>HEADING</span>, it directly calls <span>operation.applyHeading(node)</span>, and if it’s <span>ANCHOR</span>, it calls <span>operation.applyAnchor(node).</span> This removes the need for runtime type checks or virtual method lookups and ensures **fast and predictable behavior** during execution.
+
+This optimized implementation keeps the code **clean, efficient, and maintainable**. The node structure remains **simple and stable**, the operation logic stays **modular and centralized**, and performance overhead is **significantly reduced**. Most importantly, the entire system continues to **respect the Open/Closed Principle** - new operations can be added freely through new visitor classes, all while keeping existing classes untouched. The result is a **high-performance, extensible, and developer-friendly** solution that demonstrates how the Visitor Pattern can be both **architecturally elegant and resource-efficient** in real-world applications.
+
+## <div>Optimized Implementation Template in C#</div>
+``` csharp
+// NodeType.cs
+public enum NodeType
+{
+    HEADING,
+    ANCHOR
+}
+
+// Operation.cs
+public interface IOperation
+{
+    void ApplyHeading(IHtmlNode heading);
+    void ApplyAnchor(IHtmlNode anchor);
+}
+
+// HighlightOperation.cs
+public class HighlightOperation : IOperation
+{
+    public void ApplyHeading(IHtmlNode heading)
+    {
+        Console.WriteLine("highlight - heading");
+    }
+
+    public void ApplyAnchor(IHtmlNode anchor)
+    {
+        Console.WriteLine("highlight - anchor");
+    }
+}
+
+// PlainTextOperation.cs
+public class PlainTextOperation : IOperation
+{
+    public void ApplyHeading(IHtmlNode heading)
+    {
+        Console.WriteLine("text - heading");
+    }
+
+    public void ApplyAnchor(IHtmlNode anchor)
+    {
+        Console.WriteLine("text - anchor");
+    }
+}
+
+// HtmlNode.cs
+public interface IHtmlNode
+{
+    NodeType GetNodeType();
+}
+
+// HeadingNode.cs
+public class HeadingNode : IHtmlNode
+{
+    public NodeType GetNodeType()
+    {
+        return NodeType.HEADING;
+    }
+}
+
+// AnchorNode.cs
+public class AnchorNode : IHtmlNode
+{
+    public NodeType GetNodeType()
+    {
+        return NodeType.ANCHOR;
+    }
+}
+
+// VisitorExecutor.cs
+public class VisitorExecutor
+{
+    // Direct method call based on type using method references
+    public static void Execute(IHtmlNode node, IOperation operation)
+    {
+        // Switch statement with direct method invocation - no virtual method resolution
+        switch (node.GetNodeType())
+        {
+            case NodeType.HEADING:
+                operation.ApplyHeading(node); // Single method call - method reference approach
+                break;
+            case NodeType.ANCHOR:
+                operation.ApplyAnchor(node); // Single method call - method reference approach
+                break;
+            default:
+                Console.WriteLine("Unknown node type");
+                break;
+        }
+    }
+}
+
+// HtmlDocument.cs
+public class HtmlDocument
+{
+    private List<IHtmlNode> nodes = new List<IHtmlNode>();
+
+    public void Add(IHtmlNode node)
+    {
+        nodes.Add(node);
+    }
+
+    public void Execute(IOperation operation)
+    {
+        foreach (IHtmlNode node in nodes)
+        {
+            VisitorExecutor.Execute(node, operation); // Single dispatch - eliminates costly double dispatch
+        }
+    }
+}
+
+// Program.cs (Demo)
+public class Program
+{
+    public static void Main(string[] args)
+    {
+        HtmlDocument document = new HtmlDocument();
+        document.Add(new HeadingNode());
+        document.Add(new AnchorNode());
+        document.Execute(new HighlightOperation());
+    }
+}
+
+```
+--
+
+

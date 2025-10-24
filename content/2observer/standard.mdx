@@ -1,0 +1,180 @@
+
+
+# Observer Pattern - <text>Implementation Guideline</text>
+ 
+## <div>Proper usage guideline</div>
+The Observer Pattern should be applied whenever there is a **one-to-many dependency** between objects, meaning a single object’s state changes need to automatically reflect across multiple dependent components. This is common in **interactive systems, data dashboards, spreadsheets, or UI frameworks**, where a change in the core data or state should propagate seamlessly to various views or widgets. By introducing the Observer Pattern, developers can ensure that dependent objects remain synchronized without tightly coupling them to the source, preserving **modularity and flexibility**.
+
+To use the Observer Pattern effectively, start by defining a **Subject (or Publisher)** that maintains a **collection of observers** and exposes methods for adding, removing, and notifying them. The Subject does not need to know the concrete types of its observers - it only interacts with them through a shared **Observer interface**, which defines the <span>update()</span> method. This promotes **loose coupling**, as new observers can be introduced without changing existing Subject code, and existing observers can be modified independently.
+
+Each dependent object, or **Observer**, implements the shared interface, encapsulating its own behavior for reacting to state changes. For instance, a **Chart** may update a visual display, while a **SpreadSheet** recalculates and updates a table. The Subject simply calls <span>notifyObservers()</span>, relying on **polymorphism** to invoke each observer’s update logic appropriately. This design separates responsibilities: the Subject manages **state**, while observers manage **behavior**, making the system easier to **maintain and extend**.
+
+Finally, this pattern is especially valuable in systems **where observers can be dynamically added** or **removed** at runtime. Users may introduce new charts, reports, or widgets on the fly, and each can register itself with the Subject through <span>addObserver()</span> without modifying any core logic. Similarly, observers that are no longer needed can be removed via <span>removeObserver()</span>. This approach ensures the system remains **scalable, flexible, and open for extension** while adhering to the **Open/Closed Principle**.
+
+## <div>Implementation Template in Java</div> 
+
+```java
+
+// Observer.java
+public interface Observer {
+    void update();
+}
+
+// SpreadSheet.java
+public class SpreadSheet implements Observer {
+    @Override
+    public void update() {
+        System.out.println("spreadsheet got notified");
+    }
+}
+
+// Chart.java
+public class Chart implements Observer {
+    @Override
+    public void update() {
+        System.out.println("chart got notified");
+    }
+}
+
+// Subject.java
+public class Subject {
+    private List<Observer> observers = new ArrayList<>();
+
+    public void addObserver(Observer observer) {  // Programming to an interface
+        observers.add(observer);
+    }
+
+    public void removeObserver(Observer observer) {
+        observers.remove(observer);
+    }
+
+    public void notifyObservers() {
+        for (var observer : observers)
+            observer.update();   // Polymorphism
+    }
+}
+
+// DataSource.java
+public class DataSource extends Subject {
+    private int value;
+
+    public int getValue() {
+        return value;
+    }
+
+    public void setValue(int value) {
+        this.value = value;
+        notifyObservers();
+    }
+}
+
+// Demo
+public class Main {
+    public static void main(String[] args) {
+        var dataSource = new DataSource();
+
+        var sheet1 = new SpreadSheet();
+        var chart1 = new Chart();
+
+        dataSource.addObserver(sheet1);
+        dataSource.addObserver(chart1);
+
+        dataSource.setValue(3);
+    }
+}        
+
+```
+
+## <div>How the Implementation Applied to the Real World Example</div>
+
+In the real-world scenario of a spreadsheet and chart dashboard, the <span>DataSource</span> acts as the central **state-holder**, responsible for managing the core data that drives all dependent components. Whenever its value changes via the <span>setValue()</span> method, the DataSource calls <span>notifyObservers()</span>, ensuring that every registered **observer** - such as <span>SpreadSheet</span> or <span>Chart</span> objects - receives the update automatically. This mechanism eliminates the need for **manual updates, repetitive method calls,** or **hardcoded dependencies**, allowing each observer to react independently according to its own specific logic and behavior.
+
+The Observer Pattern allows new dependent components to be introduced **dynamically at runtime**, providing exceptional **flexibility** in evolving applications. For example, if a user adds a new chart widget to the dashboard, it simply registers itself with the DataSource via <span>addObserver()</span>. Once registered, it immediately begins receiving updates without requiring any modification to the DataSource or existing observers. Similarly, components that are no longer needed can be removed using <span>removeObserver()</span>, providing reduced system clutter, and seamless runtime adaptability.
+
+By abstracting communication through the <span>Observer interface</span>, the design achieves a **clear separation of concerns** and encourages **modular development**. The DataSource focuses solely on maintaining and exposing data, while each observer independently handles how it reacts to changes, whether rendering visuals, recalculating tables, or performing other application-specific operations. This structure mirrors modern **reactive systems**, where changes propagate automatically, consistently, and predictably across components without introducing **tight coupling** or **rigid dependencies**.
+
+Overall, this implementation transforms a potentially rigid, error-prone update mechanism into a **clean, maintainable, and highly extensible architecture**. The **publish-subscribe relationship** ensures that updates flow naturally through the system, observers remain fully decoupled from the Subject, and new functionality can be introduced without modifying existing components. As a result, the solution is **scalable, modular, and robust**, making it ideal for real-world, data-driven applications such as dashboards, monitoring tools, and real-time collaborative interfaces.
+
+
+## Implementation Template in C#
+``` csharp 
+
+// IObserver.cs
+public interface IObserver 
+{
+    void Update();
+}
+
+// SpreadSheet.cs
+public class SpreadSheet : IObserver 
+{
+    public void Update() 
+    {
+        Console.WriteLine("spreadsheet got notified");
+    }
+}
+
+// Chart.cs
+public class Chart : IObserver 
+{
+    public void Update() 
+    {
+        Console.WriteLine("chart got notified");
+    }
+}
+
+// Subject.cs
+public class Subject 
+{
+    private List<IObserver> observers = new List<IObserver>();
+
+    public void AddObserver(IObserver observer)  // Programming to an interface
+    {
+        observers.Add(observer);
+    }
+
+    public void RemoveObserver(IObserver observer) 
+    {
+        observers.Remove(observer);
+    }
+
+    public void NotifyObservers() 
+    {
+        foreach (var observer in observers)
+            observer.Update();   // Polymorphism
+    }
+}
+
+// DataSource.cs
+public class DataSource : Subject 
+{
+    private int value;
+
+    public int Value 
+    {
+        get { return value; }
+        set 
+        { 
+            this.value = value;
+            NotifyObservers();
+        }
+    }
+}
+
+// Program.cs
+public class Program 
+{
+    public static void Main(string[] args) 
+    {
+        var dataSource = new DataSource();
+
+        var sheet1 = new SpreadSheet();
+        var chart1 = new Chart();
+
+        dataSource.AddObserver(sheet1);
+        dataSource.AddObserver(chart1);
+
+        dataSource.Value = 3;
+    }
+}
+```

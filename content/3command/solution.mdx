@@ -1,0 +1,49 @@
+---
+title: "Command Pattern"
+description: "A comprehensive implementation of the Chain of Responsibility pattern with practical examples and best practices."
+---
+
+# Pattern Solution - <text>The Command/Undoable Command Pattern</text> 
+
+## <div>Design Pattern General Description</div>
+The **Command Pattern** is a **behavioral design pattern** that transforms a request or action into a **stand-alone object**, encapsulating all the information needed to perform that operation. This includes details such as the method to call, the receiver of the request, and any parameters required. By wrapping requests as objects, the pattern **decouples the sender** (the component issuing a request) **from the receiver** (the component executing it). This decoupling allows for flexible systems where commands can be queued or undone, promoting scalability and reducing tight coupling between classes.
+
+The **Undoable Command** variation extends this concept by introducing **reversible actions**, allowing systems to revert previous operations without cluttering core logic. This extension is particularly valuable in user-facing applications such as text editors or graphics tools, where users expect to undo or redo their last actions seamlessly. Each command object not only defines how an action is performed but also **stores enough state** to reverse that action later. This mechanism simplifies complex undo/redo systems and ensures that the logic for both execution and reversal remains **self-contained** within the same command.
+
+A key part of this architecture is the **abstraction of commands**. Instead of invoking operations directly on receivers, clients interact with an abstract interface - typically named **Command** or **UndoableCommand** -  which declares methods like <span>execute()</span> and <span>unexecute()</span>. Concrete implementations such as **BoldCommand**, **ItalicCommand**, or **UnderlineCommand** then define how these operations apply to a specific receiver (e.g., a document). This abstraction encourages a modular structure where each command focuses on a single, well-defined behavior.
+
+Finally, this pattern exemplifies the **Open/Closed Principle**, as new operations can be added without altering existing code. The separation between invoker, command, and receiver fosters **maintainability**, **testability**, and **reusability**. As a result, the Command Pattern, particularly in its undoable form, serves as a foundational mechanism in many **interactive and transactional applications**, providing a robust structure for action history and reversibility.
+
+## <div>How It Applies to the Real World Problem Example</div>
+
+In the context of a **html editor application**, the **Undoable Command Pattern** offers a clean and extensible solution to managing formatting actions and their reversals. Instead of letting the document handle all formatting and undo logic internally, the system introduces an **UndoableCommand interface**, extending the base **Command** interface. This interface declares both the <span>execute()</span> and <span>unexecute()</span> methods, ensuring that each command knows how to perform and reverse its own action. Concrete implementations such as **BoldCommand** or **ItalicCommand** then define the exact behavior of these methods.
+
+For instance, a **BoldCommand** object holds a reference to the **TextDocument** and a <span>prevContent</span> field to remember the document’s state before formatting. When <span>execute()</span> is called, it asks the document to apply bold formatting through a <span>makeBold()</span> method, while saving the old content for future undo operations. When the user requests an undo, the **BoldCommand**’s <span>unexecute()</span> method restores the saved state, effectively reversing the change without any interference from the document class. This **clear separation** ensures that the document remains focused on content manipulation only, while the command objects manage their own reversible logic.
+
+The **History** class plays a crucial coordinating role in this design. Acting as an **invoker and caretaker**, it maintains a stack (or list) of previously executed commands. Each time a command executes successfully, it pushes itself into this history. To undo an operation, an **UndoCommand** retrieves the most recent command from the history and calls its <span>unexecute()</span> method. This process allows for **consistent, centralized undo management** without duplicating logic across multiple components.
+
+Through this separation of roles - the **document** handling the core content, the **commands** managing execution and reversal, and the **history** managing order — the system becomes highly modular and maintainable. Adding new operations like “ChangeFontSizeCommand” or “AlignTextCommand” no longer requires altering the document or history code. Instead, each command remains a **self-contained, reusable unit**, following a consistent structure for both execution and undo behavior.
+ 
+
+This is a UML Diagram that shows the interaction of components in the Command/UndoableCommand Pattern as a solution to the given Problem Example 
+![Alt text](/command.png)
+
+
+## <div>Code Quality Improvements of the Pattern</div>
+
+**Separation of Concerns**:
+The document class focuses purely on managing and updating content, while individual command classes handle their own undo logic, and the history class manages the sequence of executed commands. This separation prevents logic mixing and results in cleaner, more maintainable code.  
+
+**Extensibility**:
+New formatting features, such as underline or color change, can be added effortlessly by implementing new **UndoableCommand** subclasses. The existing system components remain untouched, demonstrating the pattern’s strong adherence to the **Open/Closed Principle**.
+
+**Flexible Undo Strategies**:
+Each command encapsulates its own specific undo logic, allowing for **fine-grained control** over how different operations are reversed. For example, one command might restore previous text content, while another might revert cursor position or formatting state.
+
+**Single Responsibility**:
+Every class in this architecture has one clear, well-defined purpose — the document edits content, the commands execute and undo actions, and the history tracks order. This makes the system easier to understand, modify, and test independently.
+
+**Encapsulation**:
+Undo-related data (like the document’s previous state) remains private within the command object that created it. This ensures that **state management** is self-contained and prevents external classes from accidentally tampering with the command’s internal logic.
+
+**Reusability**: The undo framework is **generic and reusable**. Any operation that conforms to the **UndoableCommand** interface can participate in the same undo/redo mechanism, promoting uniformity and reducing duplicated logic across the system.

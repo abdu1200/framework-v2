@@ -1,0 +1,192 @@
+---
+title: "Design Problem 3"
+description: "Encapsulating Executable Actions While Enabling Flexible Undo Functionality..."
+descriptioning: "In many interactive applications, especially text editors, drawing tools, and configuration systems, users expect the ability to execute, undo, and redo operations seamlessly. These operations may include formatting text, resizing objects, or changing configurations. A straightforward implementation often embeds command logic directly inside the core classes (such as a Document or Editor), where each method performs an action and manually tracks its prior state for reversal. However, this approach tightly couples the logic for executing and undoing commands with the core application model, making it difficult to introduce new operations or modify existing ones without altering the main class..."
+category: "Behavioral"
+difficulty: "Medium"
+---
+
+# Problem: <text>Encapsulating Executable Actions While Enabling Flexible Undo Functionality</text>
+  
+## <div>General Design Problem Description</div>
+
+In many interactive applications, such as text editors, drawing tools, and configuration systems, users expect the ability to **reverse previously executed actions**,  for example, undoing a formatting change or restoring an earlier document state. A straightforward implementation often embeds **command and undo logic directly inside core classes** like a Document or Editor, where each method performs an action and manually tracks its previous state for reversal. While this approach may work for small systems, it quickly becomes problematic as the number of features increases. Each new operation adds more complexity and makes the undo management scattered and inconsistent.
+
+The main design challenge lies in **how to encapsulate actions as independent, self-contained units** that can be executed and undone without the core class knowing the internal details of each operation. Without such abstraction, systems become **tightly coupled**, making it difficult to add or modify operations without rewriting parts of the core model. As a result, the central classes (like Document or Editor) grow bloated with both business logic and undo management responsibilities, leading to **violations of the Single Responsibility Principle.**
+
+Another challenge is **maintaining the history of operations** in a consistent and scalable way. If each method inside the core class handles its own undo logic, the code becomes repetitive and error-prone, since different operations may store and restore different types of state. A unified and modular way to handle undo behavior is necessary to make the system **flexible, maintainable, and extensible**.
+
+Therefore, the general design problem is **how to decouple the execution and reversal of actions from the main application logic**, while still maintaining a consistent and easy-to-manage undo mechanism. The ideal solution should allow developers to introduce new operations or modify existing ones without touching the core classes, ensuring that the system remains open for extension but closed for modification.
+
+## <div>Design Problem Real-world Example</div>
+
+Consider a **text editor** or **an html editor application** where users can format text by applying **bold, italic, or underline** styles. Users also expect to **undo** these formatting operations at any time. A simple way to implement this might be to let the main <span>HtmlDocument</span> class handle all formatting actions as well as the undo logic. For example, when applying bold formatting, the document could store its previous state in a stack before updating the content. Similarly, each formatting method, italic, underline, and so on -  could push the previous content before applying the new style.
+
+However, this approach leads to several design issues. The document class becomes responsible for **too many things at once**: managing the content, performing the formatting, and tracking the undo history. This violates the **Single Responsibility Principle**, as undo management and formatting logic are mixed together. It also causes **code duplication**, since each formatting method (like <span>makeBold(), makeItalic(), and makeUnderline()</span>) must handle its own undo logic, storing previous states, pushing them onto stacks, and restoring them when needed. Over time, these repetitive blocks of code clutter the class and make it difficult to identify where specific formatting or undo behaviors are implemented.
+
+**Furthermore, as the application grows, these dependencies become more tangled**. A small change in one formatting method (for example, how bold text is stored) could inadvertently affect other operations or break the undo mechanism entirely. Testing and debugging also become increasingly complex because formatting and undo behaviors are tightly interwoven. If something goes wrong with the undo stack, the developer must sift through multiple methods and layers of logic within the same class to find the root cause.
+
+The system also becomes **hard to extend**. If a new formatting operation (like changing font color or size) needs to be added, the developer must modify the document class again, adding both the new formatting logic and its undo handling. This makes the code fragile and increases the risk of breaking existing functionality. **The undo mechanism also becomes inconsistent**, since different operations may store their previous state differently, leading to unpredictable results when undoing actions.
+
+In short, embedding undo functionality directly inside the document class leads to a **tightly coupled, hard-to-maintain system**. Each new feature adds more dependencies and complexity, making it difficult to evolve the software without introducing bugs or inconsistencies. This situation clearly illustrates the need for a design approach that can **encapsulate actions (commands) as independent objects**, allowing the document to stay simple while still supporting powerful undo functionality.
+
+## <div>Design Problem Code Example in Java</div>
+
+```java
+// HtmlDocument.java
+class HtmlDocument {
+    private String content = "";
+    private Stack<String> history = new Stack<>(); // Undo history
+
+    public void setContent(String content) {
+        this.content = content;
+    }
+
+    public String getContent() {
+        return content;
+    }
+
+    public void makeBold() {
+        history.push(content); // save previous state
+        content = "<b>" + content + "</b>";
+        System.out.println("→ Applied Bold: " + content);
+    }
+
+    public void makeItalic() {
+        history.push(content); // save previous state
+        content = "<i>" + content + "</i>";
+        System.out.println("→ Applied Italic: " + content);
+    }
+
+    public void makeUnderline() {
+        history.push(content); // save previous state
+        content = "<u>" + content + "</u>";
+        System.out.println("→ Applied Underline: " + content);
+    }
+
+    // Naive undo logic inside HtmlDocument
+    public void undo() {
+        if (!history.isEmpty()) {
+            content = history.pop();
+            System.out.println("Undo applied. Current content: " + content);
+        } else {
+            System.out.println("Nothing to undo.");
+        }
+    }
+}
+
+// Main.java 
+public class Main {
+    public static void main(String[] args) {
+        HtmlDocument document = new HtmlDocument();
+        document.setContent("Design Patterns are powerful!");
+
+        System.out.println("Original content: " + document.getContent());
+
+        document.makeBold();
+        document.makeItalic();
+        document.makeUnderline();
+
+        System.out.println("\n--- Performing Undo Operations ---");
+        document.undo(); // Removes underline
+        document.undo(); // Removes italic
+        document.undo(); // Removes bold
+        document.undo(); // Nothing left to undo
+    }
+}
+
+```
+
+## <div>Design Problem Code Example in C#</div>
+
+```csharp
+// HtmlDocument.cs
+class HtmlDocument
+{
+    private string content = "";
+    private Stack<string> history = new Stack<string>(); // Undo history
+
+    public void SetContent(string content)
+    {
+        this.content = content;
+    }
+
+    public string GetContent()
+    {
+        return content;
+    }
+
+    public void MakeBold()
+    {
+        history.Push(content); // save previous state
+        content = "<b>" + content + "</b>";
+        Console.WriteLine("→ Applied Bold: " + content);
+    }
+
+    public void MakeItalic()
+    {
+        history.Push(content); // save previous state
+        content = "<i>" + content + "</i>";
+        Console.WriteLine("→ Applied Italic: " + content);
+    }
+
+    public void MakeUnderline()
+    {
+        history.Push(content); // save previous state
+        content = "<u>" + content + "</u>";
+        Console.WriteLine("→ Applied Underline: " + content);
+    }
+
+    // Naive undo logic inside HtmlDocument
+    public void Undo()
+    {
+        if (history.Count > 0)
+        {
+            content = history.Pop();
+            Console.WriteLine("Undo applied. Current content: " + content);
+        }
+        else
+        {
+            Console.WriteLine("Nothing to undo.");
+        }
+    }
+}
+
+// Program.cs
+using System;
+
+public class Program
+{
+    public static void Main(string[] args)
+    {
+        HtmlDocument document = new HtmlDocument();
+        document.SetContent("Design Patterns are powerful!");
+
+        Console.WriteLine("Original content: " + document.GetContent());
+
+        document.MakeBold();
+        document.MakeItalic();
+        document.MakeUnderline();
+
+        Console.WriteLine("\n--- Performing Undo Operations ---");
+        document.Undo(); // Removes underline
+        document.Undo(); // Removes italic
+        document.Undo(); // Removes bold
+        document.Undo(); // Nothing left to undo
+    }
+}
+```
+
+## <div>Design Code Quality Issues</div>
+
+**Violates the Separation of Concerns**: The **HtmlDocument** class becomes responsible for both **content manipulation and undo management**, violating separation of concerns. This dual responsibility clutters the class, making it difficult to modify one behavior without affecting the other.
+
+**Hard to maintain**: Each formatting method (like <span>makeBold()</span>, <span>makeItalic()</span>, and <span>makeUnderline()</span>) must **duplicate undo logic** by saving the previous state before executing its operation. This repetition introduces unnecessary redundancy and makes the system harder to maintain or extend.
+
+**Violates the Open/Closed Principle**: Adding a new operation requires **modifying the HtmlDocument class itself**, which directly violates the **Open/Closed Principle**. The class is no longer closed for modification, meaning each new feature increases coupling and testing complexity.
+
+**Less flexibility**: Different operations may require **unique undo strategies** - for instance, undoing text formatting differs from undoing a font size change, yet the current design forces a single, generic undo mechanism for all actions, limiting flexibility.
+
+**Inconsistency**: Undo history management is **scattered across multiple methods**, with each command responsible for saving its own state. This inconsistent structure leads to potential errors, duplicated logic, and makes tracking operation history unreliable.
+
+**Violates the Single Responsibility Principle**: The architecture **violates the Single Responsibility Principle**, as the document class handles multiple unrelated concerns - content manipulation, history management, and undo logic, rather than focusing solely on representing and updating document content.

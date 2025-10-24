@@ -1,0 +1,206 @@
+---
+title: "Design Problem 2"
+description: "Managing Dependent Object Updates Without Tight Coupling..."
+descriptioning: "In many interactive, data-driven, or event-based systems, multiple objects depend on the state of a single source or subject object. When this subject’s state changes, all dependent or observer objects must reflect that change immediately to remain synchronized. A common naive approach is to let the source object directly call update methods on its dependents whenever its internal state changes. While this seems simple at first, it creates a strong dependency chain where the source becomes tightly coupled to every dependent class. This tight coupling makes the codebase rigid, hard to modify, and highly error-prone as the system evolves..."
+category: "Behavioral"
+difficulty: "Medium"
+---
+
+# Problem: <text>Managing Dependent Object Updates Without Tight Coupling</text>
+  
+## <div>General Design Problem Description</div>
+
+In many **interactive, data-driven, or event-based systems**, multiple objects depend on the state of a single **source or subject** object. When this **subject’s state changes**, all dependent or “observer” objects must reflect that change immediately to remain synchronized. A common naive approach is to let the source object **directly call update methods** on its dependents whenever its internal state changes. While this seems simple at first, it creates a strong **dependency chain** where the source becomes tightly coupled to every dependent class. This tight coupling makes the codebase **rigid**, hard to modify, and highly error-prone as the system evolves.
+
+The real challenge appears when we attempt to **automate the propagation of state changes** without hardcoding dependencies. In evolving applications, new dependent components - such as **charts, analytics panels, or monitoring widgets** - may be added dynamically while the system is running. If every addition requires changing the source class, the design quickly becomes **fragile and unsustainable**. Such direct dependencies break the **Open/Closed Principle**, one of the key object-oriented design principles, which states that software should be **open for extension but closed for modification**. Every new dependency forces an internal modification of the source, creating a ripple effect throughout the system.
+
+Moreover, this tight linkage introduces **bidirectional dependencies**, meaning that both the subject and its observers become **mutually aware of each other’s structure**. This drastically reduces modularity and makes it difficult to **test, reuse, or extend** individual components. For instance, testing the source class independently becomes almost impossible because it can’t function without all of its observers being present and properly configured. Over time, this pattern of dependency entanglement leads to a **bloated and interdependent architecture** that is difficult to debug and refactor.
+
+The core design problem, therefore, revolves around maintaining a **one-to-many dependency relationship** in which a single subject can **notify multiple observers automatically** whenever its state changes - without having to know who those observers are or how many exist. An ideal design must enable **loose coupling, dynamic registration and removal** of observers, and **clear separation of concerns**, allowing the system to evolve naturally and efficiently as new components are introduced or old ones are removed.
+
+## <div>Design Problem Real-world Example</div>
+
+A great real-world illustration of this problem can be found in **spreadsheet applications, real-time dashboards, and monitoring tools**, where multiple components depend on shared data. Imagine a spreadsheet system where a <span>DataSource</span> (say, “<span>Sheet1</span>”) holds numerical values. Two other components - a <span>Chart</span> that visualizes the data and another spreadsheet (“<span>Sheet2</span>”) that performs calculations — both rely on the values in “**Sheet1**.” Whenever the user updates the value in “**Sheet1**,” both the Chart and “**Sheet2**” should automatically **reflect the new value** to stay consistent.
+
+At first glance, it seems easy to implement this behavior by letting the **DataSource directly call the update methods** of the Chart and SpreadSheet objects whenever its value changes. However, this approach locks the <span>DataSource</span> into knowing the exact details of every dependent component. As the system grows, the same DataSource might need to notify additional objects - for instance, a **LogView**, a **BarChart**, or a **StatisticsPanel** - and that means developers must **keep editing the DataSource class** every time a new dependent is added. This introduces **tight coupling**, bloats the class, and makes it highly **fragile** to future changes.
+
+Even worse, this structure **violates the Open/Closed Principle**, since adding a new dependent type always requires **modifying existing code**. It also makes the system **inflexible at runtime**. If users want to create new charts or remove existing ones while the application is running, there’s no built-in mechanism for doing so dynamically. The <span>DataSource</span> becomes the central bottleneck of change - a single point that must be aware of every dependent, which destroys scalability and extensibility.
+
+Over time, this kind of rigid design leads to **maintenance headaches**. When a change is made to how the data source updates its dependents, developers must **inspect multiple code paths** and ensure that no updates are missed. Debugging becomes cumbersome, testing requires the full system to be active, and reusing components in other projects becomes nearly impossible because they depend on one another. The result is a **bloated, interlocked, and error-prone system**, where the inability to treat dependencies dynamically undermines the overall flexibility and maintainability of the software.
+
+## <div>Design Problem Code Example in Java</div> 
+
+```java
+// SpreadSheet.java
+public class SpreadSheet {
+    
+    private String name;
+
+    public SpreadSheet(String name) {
+        this.name = name;
+    }
+
+    public void update() {
+        System.out.println("spreadsheet got notified");
+    }
+}
+
+// Chart.java
+public class Chart {
+
+    private String type;
+
+    public Chart(String type) {
+        this.type = type;
+    }
+
+    public void update() {
+        System.out.println("chart got notified" );
+    }
+}
+
+// DataSource.java
+public class DataSource {
+    private int value;
+
+    public int getValue() {
+        return value;
+    }
+
+    public void setValue(int value) {
+        this.value = value;
+        //notify the dependent Spreadsheet and Chart objects here
+    }
+
+}
+
+public class Main {
+    public static void main(String[] args) {
+        DataSource dataSource = new DataSource();
+        SpreadSheet sheet1 = new SpreadSheet("Sheet1");
+        SpreadSheet sheet2 = new SpreadSheet("Sheet2");
+        Chart pieChart = new Chart("Pie Chart");
+        Chart barChart = new Chart("Bar Chart");
+
+        // Simulate tight coupling — manual notifications
+        dataSource.setValue(100);
+        sheet1.update();
+        sheet2.update();
+        pieChart.update();
+        barChart.update();
+
+        dataSource.setValue(250);
+        sheet1.update();
+        sheet2.update();
+        pieChart.update();
+        barChart.update();
+    }
+}
+
+
+```
+
+## <div>Design Problem Code Example in C#</div> 
+
+```csharp
+// SpreadSheet.cs
+public class SpreadSheet
+{
+    private string name;
+
+    public SpreadSheet(string name)
+    {
+        this.name = name;
+    }
+
+    public void Update()
+    {
+        Console.WriteLine("spreadsheet got notified");
+    }
+}
+
+// Chart.cs
+public class Chart
+{
+    private string type;
+
+    public Chart(string type)
+    {
+        this.type = type;
+    }
+
+    public void Update()
+    {
+        Console.WriteLine("chart got notified");
+    }
+}
+
+// DataSource.cs
+public class DataSource
+{
+    private int value;
+
+    public int GetValue()
+    {
+        return value;
+    }
+
+    public void SetValue(int value)
+    {
+        this.value = value;
+        //notify the dependent Spreadsheet and Chart objects here
+    }
+}
+
+// Program.cs
+using System;
+
+public class Program
+{
+    public static void Main(string[] args)
+    {
+        DataSource dataSource = new DataSource();
+        SpreadSheet sheet1 = new SpreadSheet("Sheet1");
+        SpreadSheet sheet2 = new SpreadSheet("Sheet2");
+        Chart pieChart = new Chart("Pie Chart");
+        Chart barChart = new Chart("Bar Chart");
+
+        // Simulate tight coupling — manual notifications
+        dataSource.SetValue(100);
+        sheet1.Update();
+        sheet2.Update();
+        pieChart.Update();
+        barChart.Update();
+
+        dataSource.SetValue(250);
+        sheet1.Update();
+        sheet2.Update();
+        pieChart.Update();
+        barChart.Update();
+    }
+}
+
+```
+
+## <div>Design Code design issues</div> 
+
+**Tight Coupling**:
+In this flawed approach, the **DataSource directly references and manages its dependents**, such as <span>Chart</span> and <span>SpreadSheet</span>. This means the subject cannot exist independently, making it impossible to reuse or extend without rewriting the dependency management logic.
+
+**Limited Extensibility**:
+Adding new dependent objects requires **modifying the DataSource class** every single time. This not only introduces code repetition but also slows down the integration of new features, as every addition demands touching core classes.
+
+**Violation of the Open/Closed Principle**:
+Because the source must be **edited for every new observer**, the system violates one of the foundational rules of clean architecture. Instead of being extended through new code, it must be constantly rewritten - increasing risk and fragility.
+
+**Hard to Scale**:
+The system cannot accommodate **runtime changes** - for example, when a user creates or deletes a dependent component dynamically. The number and type of observers are fixed at compile time, severely restricting scalability.
+
+**Poor Maintainability**:
+As the **DataSource becomes overloaded** with dependency logic, it becomes harder to maintain, debug, or refactor. Even small changes risk breaking notification behavior, leading to inconsistent system states.
+
+**No Flexibility**:
+There is no **modular structure** allowing the developer to easily swap out or extend observers. Every observer is hardcoded, destroying flexibility and making testing or prototyping inefficient.
+
+**Single Point of Failure**:
+Finally, since **DataSource directly depends on every observer**, any change in an observer’s interface can **break the entire notification chain**, turning the DataSource into a fragile single point of failure for the entire system.

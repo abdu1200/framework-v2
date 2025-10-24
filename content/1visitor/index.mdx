@@ -1,0 +1,245 @@
+---
+title: "Design Problem 1"
+description: "Adding New Operations to Object Structures Without Modifying Their Classes..."
+descriptioning: "In many software systems, objects are organized into complex structures or layered arrangements where each element represents a specific kind of behavior or data. These structures often appear in systems such as document editors, spreadsheet tools, and form processors, where every component, a node, cell, or field, plays a unique and well-defined role. As the system grows and new functional requirements emerge, developers frequently need to perform additional operations such as applying formatting rules, generating reports and validating content. At first, the simplest and most intuitive approach is to add a new method directly inside each class that participates in the structure to support the new behavior."
+..."
+category: "Behavioral"
+difficulty: "Medium"
+---
+
+# Problem: <text>Adding New Operations to Object Structures Without Modifying Their Classes</text>
+  
+## <div>General Design Problem Description</div>
+
+In many **software systems**, objects are organized into **complex structures or layered arrangements** where each element represents a specific kind of behavior or data. These structures often appear in systems such as **document editors, spreadsheet tools, and form processors**, where every component, **a node, cell, or field**, plays a unique and well-defined role. As the system grows and new functional requirements emerge, developers frequently need to perform additional operations such as **applying formatting rules, generating reports and validating content**. At first, the simplest and most intuitive approach is to **add a new method directly inside each class** that participates in the structure to support the new behavior.
+
+However, this seemingly straightforward approach becomes **increasingly problematic** as the system evolves. Every time a new feature or behavior is introduced, developers **must revisit and modify multiple existing classes**, creating tight dependencies between unrelated components. This practice violates the **Open/Closed Principle (OCP)** - one of the most fundamental principles in object-oriented design, which emphasizes that **classes should be open for extension but closed for modification**. By forcing changes inside stable classes whenever new features are added, the system becomes fragile and highly prone to regression errors, making it harder to maintain consistency across the codebase. 
+
+Another major issue with this approach is that **operation logic becomes scattered** across many different classes. Instead of centralizing new behaviors in one place, each class must implement its own version of every new operation, such as highlight(), plainText(), or validate(). This not only creates **code duplication**, but it also makes the overall design **less cohesive and harder to reason about**. When developers need to change or fix an operation, they must update multiple classes individually, increasing both the time and effort required for maintenance. Over time, the code loses its clarity and structure, leading to **repetitive patterns and inconsistent implementations**.
+
+Therefore, the **core design problem** is discovering a way to **add new operations or behaviors** to a family of related objects **without altering their class definitions**. The ultimate goal is to **decouple operations from the object structure**, introducing a mechanism that allows features to be implemented externally while keeping existing classes stable. Achieving this would ensure that systems remain flexible, scalable, and resilient to change, enabling developers to introduce new functionality **without breaking existing code or design integrity**.
+
+
+## <div>Design Problem Real-world Example</div>
+
+A good example of this problem appears when building **HTML editors or rendering engines**, where the system is made up of many types of nodes that represent various HTML elements. Typically, such a system contains an <span>HtmlNode interface</span> that defines the general structure of nodes like **headings, paragraphs, and links**, while an <span>HtmlDocument class</span> manages a collection of these nodes. The document often iterates over its nodes to perform common operations, such as **rendering, applying syntax highlighting**, or **formatting**. Initially, when implementing the highlighting feature, it feels natural to add a <span className="text-blue-500 ">highlight()</span> method to the HtmlNode interface and let each concrete node class, like <span>HeadingNode</span> or <span>AnchorNode</span>, provide its own implementation.
+
+But this simplicity quickly breaks down as the software matures and **new requirements** emerge. Suppose developers later want to implement **another operation**, such as converting HTML content into plain text for export or analysis. To do this, they would need to **add a new** <span>plainText()</span> **method** to the HtmlNode interface and implement it in every single concrete node class. The same cycle repeats for every new feature, validation, accessibility checking, exporting, and more. Each new operation requires **editing multiple existing files**, which introduces redundancy and makes the system **highly susceptible to human error**.
+
+As this continues, the <span>HtmlNode interface</span> **gradually becomes bloated**, accumulating numerous unrelated methods that have nothing to do with each other. What started as a simple, elegant abstraction turns into a **cluttered and fragile interface**, difficult to modify without breaking existing functionality. The code becomes tightly coupled and dependent on internal details of the node hierarchy. When dozens of node types exist, even a small change in one operation might require **rebuilding or re-testing large portions of the system**, slowing down development significantly and increasing maintenance costs.
+
+Over time, this approach severely impacts **scalability and maintainability**. Developers lose the ability to introduce new behaviors quickly because every new operation touches multiple parts of the hierarchy. The project becomes increasingly rigid, and the risk of introducing bugs grows with each modification. This situation clearly highlights the need for a **better design strategy**, one that allows adding new operations to an object structure **without altering its existing classes**.
+
+
+
+
+
+## <div>Design Problem Code Example in Java</div>
+
+```java
+// HtmlNode.java
+public interface HtmlNode {
+    void highlight();
+    void plainText();
+}
+
+// AnchorNode.java
+public class AnchorNode implements HtmlNode {
+    private String text;
+    private String url;
+
+    public AnchorNode(String text, String url) {
+        this.text = text;
+        this.url = url;
+    }
+
+    @Override
+    public void highlight() {
+        System.out.println("Highlighting anchor: <a href=\"" + url + "\">" + text + "</a>"");
+    }
+
+    @Override
+    public void plainText() {
+        System.out.println("Converting To plaintext -  anchor");
+    }
+}
+
+// HeadingNode.java 
+public class HeadingNode implements HtmlNode {
+    private String text;
+    private int level;
+
+    public HeadingNode(String text, int level) {
+        this.text = text;
+        this.level = level;
+    }
+
+    @Override
+    public void highlight() {
+        System.out.println("Highlighting heading: <h" + level + ">" + text + "</h" + level + ">");
+    }
+
+    @Override
+    public void plainText() {
+        System.out.println("Converting to plaintext -  heading");
+    }
+}
+
+// HtmlDocument.java 
+public class HtmlDocument {
+    List<HtmlNodeOld> nodes = new ArrayList<>();
+
+    public void add(HtmlNode node) {
+        nodes.add(node);
+    }
+
+    public void highlight() {
+        System.out.println(" Highlighting HTML Document ")
+        for (var node: nodes)
+            node.highlight();
+    }
+
+    public void plainText() {
+        System.out.println(" Converting HTML Document to Plain Text ")
+        for (var node: nodes)
+            node.plainText();
+    }
+}
+
+// Main.java
+public class Main {
+    public static void main(String[] args) {
+        HtmlDocument document = new HtmlDocument();
+
+        document.add(new HeadingNode("Welcome to My Website", 1));
+        document.add(new AnchorNode("Learn More", "https://example.com"));
+
+        document.highlight();
+        document.plainText();
+    }
+
+}
+
+```
+
+## <div>Design Problem Code Example in C#</div>
+
+```csharp
+// HtmlNode.cs
+public interface HtmlNode
+{
+    void Highlight();
+    void PlainText();
+}
+
+// AnchorNode.cs
+public class AnchorNode : HtmlNode
+{
+    private string text;
+    private string url;
+
+    public AnchorNode(string text, string url)
+    {
+        this.text = text;
+        this.url = url;
+    }
+
+    public void Highlight()
+    {
+        Console.WriteLine("Highlighting anchor: <a href=\"" + url + "\">" + text + "</a>");
+    }
+
+    public void PlainText()
+    {
+        Console.WriteLine("Converting To plaintext -  anchor");
+    }
+}
+
+// HeadingNode.cs
+public class HeadingNode : HtmlNode
+{
+    private string text;
+    private int level;
+
+    public HeadingNode(string text, int level)
+    {
+        this.text = text;
+        this.level = level;
+    }
+
+    public void Highlight()
+    {
+        Console.WriteLine("Highlighting heading: <h" + level + ">" + text + "</h" + level + ">");
+    }
+
+    public void PlainText()
+    {
+        Console.WriteLine("Converting to plaintext -  heading");
+    }
+}
+
+// HtmlDocument.cs
+using System.Collections.Generic;
+
+public class HtmlDocument
+{
+    List<HtmlNode> nodes = new List<HtmlNode>();
+
+    public void Add(HtmlNode node)
+    {
+        nodes.Add(node);
+    }
+
+    public void Highlight()
+    {
+        Console.WriteLine(" Highlighting HTML Document ");
+        foreach (var node in nodes)
+            node.Highlight();
+    }
+
+    public void PlainText()
+    {
+        Console.WriteLine(" Converting HTML Document to Plain Text ");
+        foreach (var node in nodes)
+            node.PlainText();
+    }
+}
+
+// Program.cs
+using System;
+
+public class Program
+{
+    public static void Main(string[] args)
+    {
+        HtmlDocument document = new HtmlDocument();
+
+        document.Add(new HeadingNode("Welcome to My Website", 1));
+        document.Add(new AnchorNode("Learn More", "https://example.com"));
+
+        document.Highlight();
+        document.PlainText();
+    }
+}
+
+```
+
+## <div>Design Code quality issues</div>
+
+**Violates the Open/Closed Principle**:
+Every time a new operation (like <span>plainText()</span> is introduced, developers must modify existing classes that implement the <span>HtmlNode</span> interface. This breaks the idea that classes should remain closed for modification once they’re stable, leading to frequent and unnecessary code changes.
+
+**Scattered Operation Logic**:
+Each new operation has its implementation distributed across multiple classes. This decentralization makes it difficult to maintain or update the behavior of a single operation since it’s defined in many places instead of one unified location.
+
+**High Maintainance Overhead**:
+Adding new operations requires revisiting every class in the hierarchy. In large systems with many node types, this can involve modifying dozens of files for a single new feature, increasing the risk of errors and inconsistencies.
+
+**Bloated Interface Design**:
+The <span>HtmlNode</span> interface grows with every new operation (e.g., <span>highlight()</span>, <span>plainText()</span>, <span>exportToPDF()</span>), making it overloaded and harder to understand or implement. New developers must implement all methods, even those unrelated to their specific node type.
+
+**Reduced Extensibility**:
+Because the structure of existing classes must constantly be changed, the system becomes less flexible over time. Extending the system with new behaviors becomes slow and error-prone, limiting future scalability.
+
+**Tight Coupling Between Structure and Behavior**:
+Each node type is directly responsible for its operation logic, mixing structural concerns with behavioral ones. This coupling prevents developers from easily reusing or combining operations across different object structures.
